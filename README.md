@@ -19,4 +19,4 @@ foobar2000's panel for music intro quiz using Spider Monkey Panel
 4. Spider monkey panel's configure write `include( [Path to panel.js] )`
 
 ## License
-MIT
+[MIT](LICENSE)
