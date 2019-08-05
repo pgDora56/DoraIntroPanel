@@ -401,7 +401,7 @@ function on_playback_pause(state) {
 }
 
 function on_key_down(vkey) {
-    console.log(vkey);
+    // console.log(vkey);
     if(vkey == 68) {
         // Push D
         open_song_data();
@@ -439,18 +439,6 @@ function on_key_down(vkey) {
             fb.Play();
         }
     }
-    // else if(vkey == 66) {
-    //     // Push B
-    // }
-    // else if(vkey == 78) {
-    //     // Push N
-    // }
-    // else if(vkey == 80) {
-    //     // Push P
-    // }
-    // else if(vkey == 83) {
-    //     // Push S
-    // }
     else if(vkey == 186) {
         // Push COLON:
         if(accept_command){
