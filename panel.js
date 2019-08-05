@@ -401,7 +401,7 @@ function on_playback_pause(state) {
 }
 
 function on_key_down(vkey) {
-    // console.log(vkey);
+    console.log(vkey);
     if(vkey == 68) {
         // Push D
         open_song_data();
@@ -450,7 +450,13 @@ function on_key_down(vkey) {
     }
     else if(accept_command){
         if(48 <= vkey && vkey <= 57){
+            // Push Number key
             commandAppend(vkey - 48);
+        }
+        else if(vkey == 8){
+            // Push BackSpace
+            command = command.slice(0, -1);
+            window.Repaint();
         }
         else if(vkey == 13) {
             // Push Enter
