@@ -14,7 +14,11 @@ var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパス�
 include(`${fb.ComponentPath}docs\\Flags.js`);
 include(`${fb.ComponentPath}docs\\Helpers.js`);
 
-var have_focus = false;
+var have_focus = false; // フォーカスの状況を真偽値で持つ
+var accept_command = false; // コマンドを受け付けるときにtrue
+var command = ""; // コマンドを一時的に入れておく
+var displayText = ""; // メッセージテキスト
+var displayRemainTime = 0; // テキストを表示しておくコマ数(Repaintごとに1減)
 
 var autoCopy = true;
 var minPercent = 10;
@@ -329,6 +333,16 @@ function on_paint(gr){
         gr.GdiDrawText(String(dis), 
             fnt(50, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, window.Width - left_margin, 100);
     }
+
+    if(displayRemainTime > 0){
+        topText += " " + displayText;
+        displayRemainTime--;
+        if(displayRemainTime <= 0) displayText = ""; 
+    }
+    if(accept_command){
+        // If it can accept command, topText show on command-text.
+        topText += " >" + command;
+    }
     gr.GdiDrawText(topText, fnt(), RGB(0, 0, 0), 0, 0, window.Width, 25);
 }
 
@@ -393,9 +407,11 @@ function on_key_down(vkey) {
         open_song_data();
     }
 
-    // else if(vkey == 27) {
-    //     // Push Escape
-    // }
+
+    else if(vkey == 27) {
+        // Push Escape
+        commandAcceptChange(false);
+    }
     else if(vkey == 37) {
         // Push Left
         // Previous
@@ -437,7 +453,58 @@ function on_key_down(vkey) {
     // }
     else if(vkey == 186) {
         // Push COLON:
+        if(accept_command){
+            commandAppend(":");
+        }
+        else{
+            commandAcceptChange(true);
+        }
     }
+    else if(accept_command){
+        if(48 <= vkey && vkey <= 57){
+            commandAppend(vkey - 48);
+        }
+        else if(vkey == 13) {
+            // Push Enter
+            try{
+                move_to = command.split(':');
+                for(var i = 0; i < move_to.length; i++){
+                    if(move_to[i] == "") move_to[i] = "0";
+                }
+                if(move_to.length > 2 || move_to.length == 0){
+                    throw new Error("move_to's length is illigal");
+                }
+                else if(move_to.length == 1){
+                    console.log("move " + move_to[0] + "sec");
+                    fb.PlaybackTime = parseInt(move_to[0]);
+                }
+                else{
+                    console.log("move " + move_to[0] + "min" + move_to[1] + "sec");
+                    fb.PlaybackTime = parseInt(move_to[0]) * 60 + parseInt(move_to[1]);
+                }
+            }
+            catch{
+                displayTextSet("Can't move to " + command, 5);
+            }
+            commandAcceptChange(false);
+        }
+    }
+}
+
+function commandAppend(st){
+    command += st;
+    window.Repaint();
+}
+
+function commandAcceptChange(mode){
+    accept_command = mode;
+    command = "";
+    window.Repaint();
+}
+
+function displayTextSet(text, time){
+    displayText = text;
+    displayRemainTime = time;
 }
 
 //
@@ -585,7 +652,6 @@ function makePlaylist() {
             var hl = getHandleList(songs, query_lists[i], true);
             plman.InsertPlaylistItems(plid, 0, hl)
         }
-        
     }
     else{
         console.log("Start making playlist: " + plname);
