@@ -14,6 +14,8 @@ var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパス�
 include(`${fb.ComponentPath}docs\\Flags.js`);
 include(`${fb.ComponentPath}docs\\Helpers.js`);
 
+var have_focus = false;
+
 var autoCopy = true;
 var minPercent = 10;
 var maxPercent = 90;
@@ -186,6 +188,11 @@ function fn_sabi(){
     }
 }
 
+function on_focus(is_focused){
+    have_focus = is_focused;
+    window.Repaint();
+}
+
 function fn_rec(){
     var handle = fb.CreateHandleList();
     var tfo = fb.TitleFormat("%playback_time_seconds%");
@@ -224,6 +231,7 @@ function on_mouse_lbtn_up(x,y){
            b.callback();
        }
     });
+    have_focus = true;
     // if(autoCopy){
     //     if(autocopy_on.trace(x,y)) autocopy_on.lbtn_up(x,y);
     // }
@@ -243,6 +251,8 @@ function on_paint(gr){
     
     gr.FillSolidRect(0, 0, window.Width, 25, RGB(135, 206, 255)); // Skyblue back
     gr.FillSolidRect(0, 25, window.Width, 50, RGB(153, 153, 153)); // Gray back
+    var backColor = (have_focus) ? RGB(255,255,255) : RGB(225,225,225);
+    gr.FillSolidRect(0, 75, window.Width, window.Height - 75, backColor);
     if(fb.GetNowPlaying()){
         var pbtm  = Math.floor(fb.PlaybackTime);
         var pblen = Math.floor(fb.PlaybackLength);
@@ -377,9 +387,56 @@ function on_playback_pause(state) {
 }
 
 function on_key_down(vkey) {
+    console.log(vkey);
     if(vkey == 68) {
         // Push D
         open_song_data();
+    }
+
+    // else if(vkey == 27) {
+    //     // Push Escape
+    // }
+    else if(vkey == 37) {
+        // Push Left
+        // Previous
+        fb.Prev();
+        fb.Pause();
+    }
+    else if(vkey == 38) {
+        // Push Up
+        // Stop
+        fb.Stop();
+    }
+    else if(vkey == 39) {
+        // Push Right
+        // Next
+        fb.Next();
+        fb.Pause();
+    }
+    else if(vkey == 40) {
+        // Push Down
+        // Play & Pause
+        if(fb.IsPlaying){
+            fb.Pause();
+        }
+        else{
+            fb.Play();
+        }
+    }
+    // else if(vkey == 66) {
+    //     // Push B
+    // }
+    // else if(vkey == 78) {
+    //     // Push N
+    // }
+    // else if(vkey == 80) {
+    //     // Push P
+    // }
+    // else if(vkey == 83) {
+    //     // Push S
+    // }
+    else if(vkey == 186) {
+        // Push COLON:
     }
 }
 
