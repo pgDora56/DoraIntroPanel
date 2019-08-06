@@ -402,6 +402,7 @@ function on_playback_pause(state) {
 
 function on_key_down(vkey) {
     console.log(vkey);
+
     if(vkey == 68) {
         // Push D
         open_song_data();
@@ -448,6 +449,25 @@ function on_key_down(vkey) {
             commandAcceptChange(true);
         }
     }
+    else if(vkey == 188) {
+        // ,
+        // Volume Half
+        fb.Volume = (fb.Volume + 100) / 2 - 100;
+        console.log("Volume half => " + fb.Volume);
+    }
+    else if(vkey == 190) {
+        // .
+        // Volume x 2
+        if(fb.Volume == -100){
+            fb.Volume = -90;
+        }
+        else{
+            var tmp = (fb.Volume + 100) * 2 - 100;
+            fb.Volume = (tmp > 0) ? 0 : tmp;
+        }
+        console.log("Volume x 2 => " + fb.Volume);
+    }
+    
     else if(accept_command){
         if(48 <= vkey && vkey <= 57){
             // Push Number key
