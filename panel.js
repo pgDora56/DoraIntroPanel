@@ -51,6 +51,8 @@ var display4 = window.GetProperty("Display Row4 - Artist Name etc...", "[%artist
 
 var nextSongSearch = window.GetProperty("View Next Song Search Panel", false);
 
+var autoStopTime = window.GetProperty("Auto Stop - 0: unavailable", 0);
+
 var songDataDraw = !(practiceMode || everyoneAnswerMode);
 
 var skipTime = Infinity;
@@ -391,9 +393,12 @@ function on_playback_time(t){
         if(t == openTime && !songDataDraw){
             open_song_data();
         }
-        else if(t == skipTime) {
+        else if(t == skipTime && autoStopTime == 0) {
             fb.Next();
         }
+    }
+    if(t == autoStopTime){
+        fb.Pause();
     }
     window.Repaint();
 }
