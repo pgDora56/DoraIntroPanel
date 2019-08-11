@@ -49,6 +49,8 @@ var display2 = window.GetProperty("Display Row2 - AnimeTieup etc...", "$if2(%ani
 var display3 = window.GetProperty("Display Row3 - Song Title etc...", "%title%");
 var display4 = window.GetProperty("Display Row4 - Artist Name etc...", "[%artist%][ '//' %ARTIST_MEMBER%]");
 
+var nextSongSearch = window.GetProperty("View Next Song Search Panel", false);
+
 var songDataDraw = !(practiceMode || everyoneAnswerMode);
 
 var skipTime = Infinity;
@@ -312,21 +314,59 @@ function on_paint(gr){
     var v_margin = v_extra / 4;
     gr.GdiDrawText(mode_str, fnt(20, 6), RGB(255, 255, 255), 405, 25, 800, 30); // モード
     if(songDataDraw){
+        common_width = window.Width - left_margin;
+        if(nextSongSearch){
+            // 次曲候補を探すやーつ
+            // MovePlaylistSelection
+            let playlist_handles = plman.GetPlaylistItems(plman.PlayingPlaylist);
+            if(playing_item_location.PlaylistItemIndex + 1 < plman.PlaylistItemCount(plman.PlayingPlaylist)){
+                gr.DrawString("Next > " + get_tf(undefined, playlist_handles[playing_item_location.PlaylistItemIndex+1]),
+                                        fnt(), RGB(0,0,0), 0, window.Height - 25, common_width, 25, 1);
+            }
+
+            if(100 + 25 * 20 < window.Height){
+                // 後続20曲を表示
+                for(var i = 0; i < 20; i++){
+                    try{
+                        gr.DrawString("" + ((i==0) ? "Next" : i) + " : " + get_tf(undefined, playlist_handles[playing_item_location.PlaylistItemIndex+i+1]),
+                        fnt(), RGB(0,0,0), window.Width / 2 + 10, 75 + 25 * i, common_width, 25, 0);
+                    }
+                    catch{
+                        break;
+                    }
+                }
+            }
+            else{
+                // 後続10曲を表示
+                for(var i = 0; i < 10; i++){
+                    try{
+                        gr.DrawString("" + ((i==0) ? "Next" : i) + " : " + get_tf(undefined, playlist_handles[playing_item_location.PlaylistItemIndex+i+1]),
+                        fnt(), RGB(0,0,0), window.Width / 2 + 10, 75 + 25 * i, common_width, 25, 0);
+                    }
+                    catch{
+                        break;
+                    }
+                }
+            }
+            common_width /= 2;
+        }
+
         gr.DrawString(fb.TitleFormat(display1).Eval(), 
-                                    fnt(undefined), RGB(0, 0, 0), left_margin, 80, window.Width - left_margin, 100, 0);
+                                    fnt(undefined), RGB(0, 0, 0), left_margin, 80, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat(display2).Eval(), 
-                                    fnt(26, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, window.Width - left_margin, 100, 0);
+                                    fnt(26, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, common_width, 100, 0);
         // gr.DrawString(fb.TitleFormat("$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // 難易度: %publisher%").Eval(), 
-        //                             fnt(undefined), RGB(0, 0, 0), left_margin, 80, window.Width - left_margin, 100);
+        //                             fnt(undefined), RGB(0, 0, 0), left_margin, 80, common_width, 100);
         // gr.DrawString(fb.TitleFormat("$if2(%album%,-)").Eval(), 
-        //                             fnt(26, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, window.Width - left_margin, 100);
+        //                             fnt(26, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, common_width, 100);
         gr.DrawString(fb.TitleFormat(display3).Eval(), 
-                                    fnt(30, 1), RGB(0, 0, 0), left_margin, 140 + v_margin * 2, window.Width - left_margin, 100, 0);
+                                    fnt(30, 1), RGB(0, 0, 0), left_margin, 140 + v_margin * 2, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat(display4).Eval(), 
-                                    fnt(20), RGB(0, 0, 0), left_margin, 180 + v_margin * 3, window.Width - left_margin, 100, 0);
+                                    fnt(20), RGB(0, 0, 0), left_margin, 180 + v_margin * 3, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat("[サビ: %RECORD_TIME%s]").Eval(), fnt(), RGB(255, 255, 255), 405, 50, 100, 30, 0);
 
         if(fb.IsPlaying) topText += ' [' + (playing_item_location.PlaylistItemIndex + 1) + "/" + plman.PlaylistItemCount(plman.PlayingPlaylist) + ']'; // 何曲目か/プレイリスト総曲数
+
     }
     else if(everyoneAnswerMode){
         var dis = openTime - pbtm;
@@ -421,19 +461,20 @@ function on_key_down(vkey) {
     }
     else if(vkey == 38) {
         // Push Up
-        // Stop
-        fb.Stop();
+        // Sabi
+        fn_sabi();
     }
     else if(vkey == 39) {
         // Push Right
         // Next
-        fb.Next();
+        fn_next();
         fb.Pause();
     }
     else if(vkey == 40) {
         // Push Down
         // Play & Pause
         if(fb.IsPlaying){
+            console.log(plman.PlayingPlaylist);
             fb.Pause();
         }
         else{
@@ -451,29 +492,37 @@ function on_key_down(vkey) {
     }
     else if(vkey == 188) {
         // ,
-        // Volume Half
-        fb.Volume = (fb.Volume + 100) / 2 - 100;
-        console.log("Volume half => " + fb.Volume);
+        // Volume Down
+        fb.Volume = Math.max(fb.Volume-10, -100);
+        console.log("Volume Down => " + fb.Volume);
+        displayTextSet("Volume Down => " + fb.Volume, 5);
     }
     else if(vkey == 190) {
         // .
         // Volume x 2
-        if(fb.Volume == -100){
-            fb.Volume = -90;
-        }
-        else{
-            var tmp = (fb.Volume + 100) * 2 - 100;
-            fb.Volume = (tmp > 0) ? 0 : tmp;
-        }
-        console.log("Volume x 2 => " + fb.Volume);
+        fb.Volume = Math.min(fb.Volume+10, 0);
+        console.log("Volume Up => " + fb.Volume);
+        displayTextSet("Volume Up => " + fb.Volume, 5);
     }
-    
-    else if(accept_command){
-        if(48 <= vkey && vkey <= 57){
-            // Push Number key
-            commandAppend(vkey - 48);
+    else if(48 <= vkey && vkey <= 57){
+        // Push Number key
+        var number = vkey - 48;
+        if(accept_command){
+            commandAppend(number);
+        }else{
+            // plman.SetPlaylistFocusItem(plman.ActivePlaylist, [plman.GetPlayingItemLocation().PlaylistItemIndex], true);
+            var playing_item_location = plman.GetPlayingItemLocation();
+            for(var i=0;i<plman.PlayingPlayCount;i++){
+                plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, i , false);
+            }
+            plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, playing_item_location.PlaylistItemIndex, true);
+            console.log(playing_item_location.PlaylistItemIndex);
+            plman.MovePlaylistSelection(plman.ActivePlaylist, (number == 0) ? 10 : number);
+            window.Repaint();
         }
-        else if(vkey == 8){
+    }
+    else if(accept_command){
+        if(vkey == 8){
             // Push BackSpace
             command = command.slice(0, -1);
             window.Repaint();
@@ -564,10 +613,15 @@ function propertiesReloading(){
     window.Repaint();
 }
 
-function get_tf(tf){
+function get_tf(tf, handle){
     if(tf==undefined) tf = judgeFormat;
-    if (fb.GetNowPlaying()){
-        return fb.TitleFormat(tf).Eval();
+    if(handle==undefined){
+        if (fb.GetNowPlaying()){
+            return fb.TitleFormat(tf).Eval();
+        }
+    }
+    else{
+        return fb.TitleFormat(tf).EvalWithMetadb(handle);
     }
 }
 
