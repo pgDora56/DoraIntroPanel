@@ -8,7 +8,15 @@ window.DefinePanel("DoraIntroPanel", { author: "Dora F." });
 
 var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパスを指定する
 
+/*
+class StudyingPlaylist{
+    constructor(handles){
+        this._songsLen = handles.length;
+        
+    }
 
+}
+*/
 
 
 include(`${fb.ComponentPath}docs\\Flags.js`);
@@ -26,6 +34,8 @@ var maxPercent = 90;
 var rantroStartPercent = -1;
 var ntime = 0;
 var playing = "";
+
+var PlayingLocation = -1; // 再生位置を毎度記録
 
 
 var judgeFormat = window.GetProperty("Judge & Copy Format", "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]");
@@ -255,6 +265,8 @@ function on_mouse_lbtn_up(x,y){
 //
 
 function on_paint(gr){
+    every_second_check();
+
     window.MinHeight = 225;
     
     gr.FillSolidRect(0, 0, window.Width, 25, RGB(135, 206, 255)); // Skyblue back
@@ -389,18 +401,23 @@ function on_paint(gr){
 }
 
 function on_playback_time(t){
+    PlayingLocation = t;
+    window.Repaint();
+}
+
+function every_second_check(){
+    t = PlayingLocation;
     if(everyoneAnswerMode){
-        if(t == openTime && !songDataDraw){
+        if(t >= openTime && skipTime > t && !songDataDraw){
             open_song_data();
         }
-        else if(t == skipTime && autoStopTime == 0) {
+        else if(t >= skipTime && autoStopTime == 0) {
             fb.Next();
         }
     }
     if(t == autoStopTime){
         fb.Pause();
     }
-    window.Repaint();
 }
 
 function on_playback_seek(){
@@ -413,6 +430,7 @@ function on_playback_new_track(){
     console.log(playing_item_location.PlaylistItemIndex + "/" + plman.PlaylistItemCount(plman.PlayingPlaylist));
     ntime = 0;
     skipTime = Infinity;
+    PlayingLocation = -1;
     songDataDraw = !(practiceMode || everyoneAnswerMode);
     window.Repaint();
     var nowPlaying = get_tf();
