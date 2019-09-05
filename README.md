@@ -11,6 +11,8 @@ foobar2000's panel for music intro quiz using Spider Monkey Panel
 * Auto questioning function
   * with practice mode
 * Auto copy music information
+* Support for you to give intro questions
+  * The next song can be chosen smoothly
 
 ## Usage
 1. Install spider monkey panel
