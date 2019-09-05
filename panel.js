@@ -8,16 +8,12 @@ window.DefinePanel("DoraIntroPanel", { author: "Dora F." });
 
 var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパスを指定する
 
-/*
+
 class StudyingPlaylist{
     constructor(handles){
-        this._songsLen = handles.length;
-        
+        this._songsLen = handles.length;        
     }
-
 }
-*/
-
 
 include(`${fb.ComponentPath}docs\\Flags.js`);
 include(`${fb.ComponentPath}docs\\Helpers.js`);
@@ -62,6 +58,9 @@ var display4 = window.GetProperty("Display Row4 - Artist Name etc...", "[%artist
 var nextSongSearch = window.GetProperty("View Next Song Search Panel", false);
 
 var autoStopTime = window.GetProperty("Auto Stop - 0: unavailable", 0);
+
+var saveFilename = window.GetProperty("Play history save to:", "");
+var saveReady = false;
 
 var songDataDraw = !(practiceMode || everyoneAnswerMode);
 
@@ -338,9 +337,9 @@ function on_paint(gr){
                                         fnt(), RGB(0,0,0), 0, window.Height - 25, common_width, 25, 1);
             }
 
-            if(100 + 25 * 20 < window.Height){
+            if(100 + 25 * 21 < window.Height){
                 // 後続20曲を表示
-                for(var i = 0; i < 20; i++){
+                for(var i = 0; i < 21; i++){
                     try{
                         gr.DrawString("" + ((i==0) ? "Next" : i) + " : " + get_tf(undefined, playlist_handles[playing_item_location.PlaylistItemIndex+i+1]),
                         fnt(), RGB(0,0,0), window.Width / 2 + 10, 75 + 25 * i, common_width, 25, 0);
@@ -351,8 +350,8 @@ function on_paint(gr){
                 }
             }
             else{
-                // 後続10曲を表示
-                for(var i = 0; i < 10; i++){
+                // 後続11曲を表示
+                for(var i = 0; i < 11; i++){
                     try{
                         gr.DrawString("" + ((i==0) ? "Next" : i) + " : " + get_tf(undefined, playlist_handles[playing_item_location.PlaylistItemIndex+i+1]),
                         fnt(), RGB(0,0,0), window.Width / 2 + 10, 75 + 25 * i, common_width, 25, 0);
@@ -464,11 +463,11 @@ function on_playback_pause(state) {
 }
 
 function on_key_down(vkey) {
-    console.log(vkey);
+    console.log("vkey: " + vkey);
 
     if(vkey == 68) {
         // Push D
-        open_song_data();
+        open_song_data_with_repaint();
     }
 
 
@@ -492,12 +491,20 @@ function on_key_down(vkey) {
         // Next
         fn_next();
         fb.Pause();
+        saveReady = true;
+        console.log("saveReady turns to true");
     }
     else if(vkey == 40) {
         // Push Down
         // Play & Pause
         if(fb.IsPlaying){
             console.log(plman.PlayingPlaylist);
+            if(fb.IsPaused){             
+                if(saveReady && saveFilename != ""){
+                    appendLineFile("D:\\Quiz\\AIQ\\history\\" + saveFilename, get_tf());
+                    saveReady = false;
+                }
+            }
             fb.Pause();
         }
         else{
@@ -535,11 +542,10 @@ function on_key_down(vkey) {
         }else{
             // plman.SetPlaylistFocusItem(plman.ActivePlaylist, [plman.GetPlayingItemLocation().PlaylistItemIndex], true);
             var playing_item_location = plman.GetPlayingItemLocation();
-            for(var i=0;i<plman.PlayingPlayCount;i++){
+            for(var i=0;i<playing_item_location.PlaylistItemIndex;i++){
                 plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, i , false);
             }
             plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, playing_item_location.PlaylistItemIndex, true);
-            console.log(playing_item_location.PlaylistItemIndex);
             plman.MovePlaylistSelection(plman.ActivePlaylist, (number == 0) ? 10 : number);
             window.Repaint();
         }
@@ -622,7 +628,6 @@ function propertiesReloading(){
 
     songDataDraw =  !(practiceMode || everyoneAnswerMode);
 
-
     try{
         var pers = rantoro_percent.split('-');
         minPercent = parseInt(pers[0]);
@@ -681,7 +686,26 @@ function open_song_data() {
     songDataDraw = true;
     fn_sabi();
     skipTime = parseInt(fb.PlaybackTime + 5);
+}
+
+function open_song_data_with_repaint(){
+    open_song_data();
     window.Repaint();
+}
+
+function appendLineFile(filename, content){
+    var old = "";
+    try{
+        old = utils.ReadTextFile(filename);
+        old += "\n"
+    }
+    catch{
+        console.log("Make new file: " + filename);
+    }
+    finally{
+        utils.WriteTextFile(filename, old + content);
+        console.log("Write:" + content );
+    }
 }
 
 function makePlaylist() {
