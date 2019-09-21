@@ -50,6 +50,8 @@ var everyoneAnswerMode = window.GetProperty("Everyone Answer Mode - Enabled", fa
 var openTime = window.GetProperty("Everyone Answer Mode - Open Time", 15);
 var mode = window.GetProperty("Mode - N(ormal) or R(antro) or O(utro)", "N");
 
+var expertKeyOperation = window.GetProperty("Expert Key Operation", false);
+
 var display1 = window.GetProperty("Display Row1 - Year, Genre, Album etc...", "$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // Album: %album%[ by %album artist%]");
 var display2 = window.GetProperty("Display Row2 - AnimeTieup etc...", "$if2(%animetitle%,-)");
 var display3 = window.GetProperty("Display Row3 - Song Title etc...", "%title%");
@@ -363,19 +365,20 @@ function on_paint(gr){
             }
             common_width /= 2;
         }
-
+        // console.log("General: " + fb.TitleFormat("%general%"))
+        var clr = (fb.TitleFormat("%general%").Eval()=="1") ? RGB(200, 0, 0) : RGB(0, 0, 0);
         gr.DrawString(fb.TitleFormat(display1).Eval(), 
-                                    fnt(undefined), RGB(0, 0, 0), left_margin, 80, common_width, 100, 0);
+                                    fnt(undefined), clr, left_margin, 80, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat(display2).Eval(), 
-                                    fnt(26, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, common_width, 100, 0);
+                                    fnt(26, 1), clr, left_margin, 105 + v_margin, common_width, 100, 0);
         // gr.DrawString(fb.TitleFormat("$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // 難易度: %publisher%").Eval(), 
         //                             fnt(undefined), RGB(0, 0, 0), left_margin, 80, common_width, 100);
         // gr.DrawString(fb.TitleFormat("$if2(%album%,-)").Eval(), 
         //                             fnt(26, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, common_width, 100);
         gr.DrawString(fb.TitleFormat(display3).Eval(), 
-                                    fnt(30, 1), RGB(0, 0, 0), left_margin, 140 + v_margin * 2, common_width, 100, 0);
+                                    fnt(30, 1), clr, left_margin, 140 + v_margin * 2, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat(display4).Eval(), 
-                                    fnt(20), RGB(0, 0, 0), left_margin, 180 + v_margin * 3, common_width, 100, 0);
+                                    fnt(20), clr, left_margin, 180 + v_margin * 3, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat("[サビ: %RECORD_TIME%s]").Eval(), fnt(), RGB(255, 255, 255), 405, 50, 100, 30, 0);
 
         if(fb.IsPlaying) topText += ' [' + (playing_item_location.PlaylistItemIndex + 1) + "/" + plman.PlaylistItemCount(plman.PlayingPlaylist) + ']'; // 何曲目か/プレイリスト総曲数
@@ -465,37 +468,31 @@ function on_playback_pause(state) {
 function on_key_down(vkey) {
     console.log("vkey: " + vkey);
 
-    if(vkey == 68) {
-        // Push D
+    if(vkey == 68 && !expertKeyOperation || vkey == 18) {
+        // Push D (UnexpertKeyOperation Mode) or Push Space
         open_song_data_with_repaint();
     }
-
-
-    else if(vkey == 27) {
-        // Push Escape
-        commandAcceptChange(false);
-    }
-    else if(vkey == 37) {
-        // Push Left
+    else if(vkey == 65 && expertKeyOperation || vkey == 37) {
+        // Push Left or Push A (ExpertKeyOperation Mode)
         // Previous
         fb.Prev();
         fb.Pause();
     }
-    else if(vkey == 38) {
-        // Push Up
-        // Sabi
+    else if(vkey == 87 && expertKeyOperation || vkey == 38) {
+        // Push Up or Push W (ExpertKeyOperation Mode)
+       // Sabi
         fn_sabi();
     }
-    else if(vkey == 39) {
-        // Push Right
+    else if(vkey == 68 && expertKeyOperation || vkey == 39) {
+        // Push Right or Push D (ExpertKeyOperation Mode)
         // Next
         fn_next();
         fb.Pause();
         saveReady = true;
         console.log("saveReady turns to true");
     }
-    else if(vkey == 40) {
-        // Push Down
+    else if(vkey == 83 && expertKeyOperation || vkey == 40) {
+        // Push Down or Push S (ExpertKeyOperation Mode)
         // Play & Pause
         if(fb.IsPlaying){
             console.log(plman.PlayingPlaylist);
@@ -510,6 +507,10 @@ function on_key_down(vkey) {
         else{
             fb.Play();
         }
+    }
+    else if(vkey == 27) {
+        // Push Escape
+        commandAcceptChange(false);
     }
     else if(vkey == 186) {
         // Push COLON:
