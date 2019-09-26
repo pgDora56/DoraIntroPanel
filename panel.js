@@ -23,6 +23,7 @@ var accept_command = false; // コマンドを受け付けるときにtrue
 var command = ""; // コマンドを一時的に入れておく
 var displayText = ""; // メッセージテキスト
 var displayRemainTime = 0; // テキストを表示しておくコマ数(Repaintごとに1減)
+var setTimer;
 
 var autoCopy = true;
 var minPercent = 10;
@@ -295,16 +296,16 @@ function on_paint(gr){
                 // gr.FillGradRect(510, 10 * w_per_h, w, h, 0, RGB(230, 230, 230), RGB(255, 255, 255));
                 gr.DrawImage(img, x, y, w, h, src_x, src_y, src_w, src_h, angle, alpha);
             }
-        }
-        var timeMin = Math.floor(pbtm / 60);
-        var timeSec = pbtm % 60;
-        var lengMin = Math.floor(pblen / 60);
-        var lengSec = pblen % 60;
-        var timeText = timeMin + ":" + ((timeSec < 10) ? ("0" + timeSec) : timeSec) + "/" + lengMin + ":"
+         var timeMin = Math.floor(pbtm / 60);
+         var timeSec = pbtm % 60;
+         var lengMin = Math.floor(pblen / 60);
+         var lengSec = pblen % 60;
+         var timeText = timeMin + ":" + ((timeSec < 10) ? ("0" + timeSec) : timeSec) + "/" + lengMin + ":"
                                                              + ((lengSec < 10) ? ("0" + lengSec) : lengSec);
-        var timeMS = gr.MeasureString(timeText, fnt(28), 400, 0, 1000, 50);
-        var rightDist = timeMS.Width + 10;
-        gr.GdiDrawText(timeText, fnt(28), RGB(255, 255, 255), window.Width - rightDist, 30, rightDist, 50); // 時間
+         var timeMS = gr.MeasureString(timeText, fnt(28), 400, 0, 1000, 50);
+         var rightDist = timeMS.Width + 10;
+         gr.GdiDrawText(timeText, fnt(28), RGB(255, 255, 255), window.Width - rightDist, 30, rightDist, 50); // 時間
+        }
     }
     buttons.forEach(function(b){
         b.paint(gr);
@@ -468,7 +469,7 @@ function on_playback_pause(state) {
 function on_key_down(vkey) {
     console.log("vkey: " + vkey);
 
-    if(vkey == 68 && !expertKeyOperation || vkey == 18) {
+    if(vkey == 68 && !expertKeyOperation || vkey == 32) {
         // Push D (UnexpertKeyOperation Mode) or Push Space
         open_song_data_with_repaint();
     }
@@ -687,6 +688,9 @@ function open_song_data() {
     songDataDraw = true;
     fn_sabi();
     skipTime = parseInt(fb.PlaybackTime + 5);
+    if(saveFilename != ""){
+        appendLineFile("D:\\Quiz\\AIQ\\history\\" + saveFilename, get_tf());
+    }
 }
 
 function open_song_data_with_repaint(){
