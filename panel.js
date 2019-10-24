@@ -727,6 +727,9 @@ function makePlaylist() {
     plman.CreatePlaylist(plid, plname);
     var modeCheck = lines[0].split(",");
     if(modeCheck[0] == "balance"){
+        // 未実装
+        console.log("balance mode is unavailable");
+        return;
         console.log("Start making playlist by balance: " + plname);
         var query_lists = [];
         var gravitys = [];
@@ -796,25 +799,24 @@ function makePlaylist() {
                     else if(datas[1] == "") query = base;
                     else query = "(" + base + ") AND (" + datas[1] + ")";
 
-                    console.log("OK");
-
                     hl = fb.GetQueryItems(fb.GetLibraryItems(), query);
                     picklist = new FbMetadbHandleList();
-                    console.log("OK2");
 
                     for(var i = 0; i < n; i++)
                     {
+                        if(hl.Count <= 0){
+                            n = i;
+                            break;
+                        } 
                         var r = Math.floor(Math.random() * hl.Count);
                         picklist.Add(hl[r]);
                         hl.RemoveById(r);
                     }
-                    console.log("OK3");
-
                     // if(hl.Count > n){
                     //     hl.RemoveRange(n, hl.Count); 
                     // }
                     plman.InsertPlaylistItems(plid, 0, picklist);
-                    console.log(datas[1] + "->" + hl.Count + "Songs");
+                    console.log(datas[1] + "->" + n + "Songs");
                     // No error, but playlist made by that is always same.  
                     // It needs be append shuffle function.
                 }
