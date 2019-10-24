@@ -783,6 +783,7 @@ function makePlaylist() {
                 var datas = line.split(',');
                 if(datas[0] == "") {
                     base = datas[1];
+                    console.log("MPS > Set Base: " + base);
                 }else{
                     var n = parseInt(datas[0]);
                     query = datas[1];
@@ -790,11 +791,19 @@ function makePlaylist() {
                         console.log("Skip");
                         return;
                     }
+                    
                     if(base == "") query = datas[1];
                     else if(datas[1] == "") query = base;
                     else query = "(" + base + ") AND (" + datas[1] + ")";
-                    hl = getHandleList(n, query, true);
+
+                    hl = fb.GetQueryItems(fb.GetLibraryItems(), query);
+                    if(hl.Count > n){
+                        hl.RemoveRange(n, hl.Count); 
+                    }
                     plman.InsertPlaylistItems(plid, 0, hl);
+                    console.log(datas[1] + "->" + hl.Count + "Songs");
+                    // no error, but playlist made by that is always same. 
+                    // It needs be append shuffle function.
                 }
             }catch(e){
                 console.log("Error:" + line);
