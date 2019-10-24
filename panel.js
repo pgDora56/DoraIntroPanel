@@ -11,7 +11,7 @@ var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパス�
 
 class StudyingPlaylist{
     constructor(handles){
-        this._songsLen = handles.length;        
+        this._songsLen = handles.length;
     }
 }
 
@@ -796,13 +796,26 @@ function makePlaylist() {
                     else if(datas[1] == "") query = base;
                     else query = "(" + base + ") AND (" + datas[1] + ")";
 
+                    console.log("OK");
+
                     hl = fb.GetQueryItems(fb.GetLibraryItems(), query);
-                    if(hl.Count > n){
-                        hl.RemoveRange(n, hl.Count); 
+                    picklist = new FbMetadbHandleList();
+                    console.log("OK2");
+
+                    for(var i = 0; i < n; i++)
+                    {
+                        var r = Math.floor(Math.random() * hl.Count);
+                        picklist.Add(hl[r]);
+                        hl.RemoveById(r);
                     }
-                    plman.InsertPlaylistItems(plid, 0, hl);
+                    console.log("OK3");
+
+                    // if(hl.Count > n){
+                    //     hl.RemoveRange(n, hl.Count); 
+                    // }
+                    plman.InsertPlaylistItems(plid, 0, picklist);
                     console.log(datas[1] + "->" + hl.Count + "Songs");
-                    // no error, but playlist made by that is always same. 
+                    // No error, but playlist made by that is always same.  
                     // It needs be append shuffle function.
                 }
             }catch(e){
