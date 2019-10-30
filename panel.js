@@ -27,6 +27,7 @@ var playing = "";
 
 var PlayingLocation = -1; // 再生位置を毎度記録
 
+var panelHeight = window.GetProperty("Panel Height", "520");
 
 var judgeFormat = window.GetProperty("Judge & Copy Format", "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]");
 
@@ -262,8 +263,10 @@ function on_mouse_lbtn_up(x,y){
 function on_paint(gr){
     every_second_check();
 
-    window.MinHeight = 225;
+    window.Height = panelHeight;
     
+    console.log(window.Height);
+
     gr.FillSolidRect(0, 0, window.Width, 25, RGB(135, 206, 255)); // Skyblue back
     gr.FillSolidRect(0, 25, window.Width, 50, RGB(153, 153, 153)); // Gray back
     var backColor = (have_focus) ? RGB(255,255,255) : RGB(225,225,225);
