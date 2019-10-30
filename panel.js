@@ -8,13 +8,6 @@ window.DefinePanel("DoraIntroPanel", { author: "Dora F." });
 
 var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパスを指定する
 
-
-class StudyingPlaylist{
-    constructor(handles){
-        this._songsLen = handles.length;
-    }
-}
-
 include(`${fb.ComponentPath}docs\\Flags.js`);
 include(`${fb.ComponentPath}docs\\Helpers.js`);
 
