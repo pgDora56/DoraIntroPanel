@@ -5,11 +5,27 @@
 
 window.DefinePanel("DoraIntroPanel", { author: "Dora F." });
 
-
+// curl TEST
+/*
+$.ajax({
+    type: 'POST',
+    url: 'https://discordapp.com/api/webhooks/563387125446344724/Rm-ZNzNdQzHgLQKnV7EzDSJ3A23RdqPU5X3R2THXIaOryQvFR9OVNx2TfKJxyYFrIWEY',
+    data:{"username": "Mocho", "avatar_url": "https://pbs.twimg.com/media/D93CoIaUIAAmklR.jpg","content":"Wake up"},
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  }).then(function(response){
+    console.log(response)
+  })
+*/
 var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパスを指定する
 
 include(`${fb.ComponentPath}docs\\Flags.js`);
 include(`${fb.ComponentPath}docs\\Helpers.js`);
+
+include(`parts.js`);
+include(`myfuncs.js`);
+include(`callbackfuncs.js`);
 
 var have_focus = false; // フォーカスの状況を真偽値で持つ
 var accept_command = false; // コマンドを受け付けるときにtrue
@@ -28,6 +44,7 @@ var playing = "";
 var PlayingLocation = -1; // 再生位置を毎度記録
 
 var panelHeight = window.GetProperty("Panel Height", "520");
+window.MinHeight = panelHeight;
 
 var judgeFormat = window.GetProperty("Judge & Copy Format", "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]");
 
@@ -44,70 +61,21 @@ var practiceMode = window.GetProperty("Practice Mode - Enabled", false);
 var everyoneAnswerMode = window.GetProperty("Everyone Answer Mode - Enabled", false);
 var openTime = window.GetProperty("Everyone Answer Mode - Open Time", 15);
 var mode = window.GetProperty("Mode - N(ormal) or R(antro) or O(utro)", "N");
-
 var expertKeyOperation = window.GetProperty("Expert Key Operation", false);
-
 var display1 = window.GetProperty("Display Row1 - Year, Genre, Album etc...", "$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // Album: %album%[ by %album artist%]");
 var display2 = window.GetProperty("Display Row2 - AnimeTieup etc...", "$if2(%animetitle%,-)");
 var display3 = window.GetProperty("Display Row3 - Song Title etc...", "%title%");
 var display4 = window.GetProperty("Display Row4 - Artist Name etc...", "[%artist%][ '//' %ARTIST_MEMBER%]");
-
 var nextSongSearch = window.GetProperty("View Next Song Search Panel", false);
-
 var autoStopTime = window.GetProperty("Auto Stop - 0: unavailable", 0);
-
 var saveFilename = window.GetProperty("Play history save to:", "");
 var saveReady = false;
-
 var songDataDraw = !(practiceMode || everyoneAnswerMode);
-
 var skipTime = Infinity;
 
-
-//==============================================
-class button {
-    constructor(x,y,w,h,bimg,handler,name){
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-        this.bimg = bimg;
-        this.handler = handler;
-        this.name = name;
-
-        this.img = gdi.Image(bimg.normal);
-    }
-
-    cs(str){
-        if(str=="hover"){
-            this.img = gdi.Image(this.bimg.hover);
-        }
-        else{
-            this.img = gdi.Image(this.bimg.normal);
-        }
-        window.Repaint();
-    }
-
-    trace(x,y){
-        return this.x <= x && x <= this.x + this.w &&
-             this.y <= y && y <= this.y + this.h;
-     }
-
-    callback(){
-        this.handler();
-    }
-
-    paint(gr){
-        gr.DrawImage(this.img, this.x, this.y, this.w, this.h, 
-            0, 0, this.img.Width, this.img.Height);
-    }
-}
+// 以上Variables
 
 var tooltip = window.CreateTooltip();
-function button_img(normal_path,hover_path){
-    this.normal = normal_path;
-    this.hover = hover_path;
-}
 
 // var sabi_img = new button_img(img_path+"sabi.png",img_path+"sabi_hover.png");
 // var sabi = new button(10, 155, 100, 50, sabi_img, fn_sabi, "サビへ");
@@ -148,81 +116,6 @@ var musix = new button(250, 25, 50, 50, musix_img, fn_sabi, "サビへ");
 
 var buttons = [musix, rec, stop, pause, play, previous, next, plus];
 
-
-//
-// Callback関数
-//
-function fn_stop(){
-    fb.Stop();
-}
-
-function fn_pause(){
-    fb.Pause();
-}
-
-function fn_play(){
-    fb.Play();
-}
-
-function fn_previous(){
-    fb.Prev();
-}
-
-function fn_next(){
-    fb.Next();
-}
-
-
-// function fn_autocopy_on(){
-//     autoCopy = false;
-//     window.Repaint();
-// }
-
-// function fn_autocopy_off(){
-//     autoCopy = true;
-//     window.Repaint();
-// }
-
-function fn_sabi(){
-    var time = fb.TitleFormat("%RECORD_TIME%").Eval();
-    console.log(time=="?");
-    // console.log(time == "?");
-    try{
-        if(time != "?") {
-            fb.PlaybackTime = time;
-        }
-        else{
-            console.log("Don't set Sabi");
-            console.log("Sabi:" + time);
-        }
-    }
-    catch{
-        console.log("Can't move to Sabi");
-        console.log("Sabi:" + time);
-    }
-}
-
-function on_focus(is_focused){
-    have_focus = is_focused;
-    window.Repaint();
-}
-
-function fn_rec(){
-    var handle = fb.CreateHandleList();
-    var tfo = fb.TitleFormat("%playback_time_seconds%");
-    console.log(tfo.Eval());
-    var data = fb.GetNowPlaying();
-    handle.Add(data);
-    // data.UpdateFileInfoSimple("RECORD_TIME", tfo.Eval());
-    handle.UpdateFileInfoFromJSON(
-        JSON.stringify({
-            'RECORD_TIME' : tfo.Eval()
-        })
-    );
-    window.Repaint();
-}
-
-
 function on_mouse_move(x,y){
     buttons.forEach(function(b){
         if (b.trace(x,y)) {
@@ -246,31 +139,20 @@ function on_mouse_lbtn_up(x,y){
        }
     });
     have_focus = true;
-    // if(autoCopy){
-    //     if(autocopy_on.trace(x,y)) autocopy_on.lbtn_up(x,y);
-    // }
-    // else{
-    //     if(autocopy_off.trace(x,y)) autocopy_off.lbtn_up(x,y);
-    // }
 }
 
-//==============================================
-
-//
-// システム系
-//
 
 function on_paint(gr){
     every_second_check();
-
-    window.Height = panelHeight;
+    const minHeight = 225;
+    const pHeight = panelHeight;
     
     console.log(window.Height);
 
     gr.FillSolidRect(0, 0, window.Width, 25, RGB(135, 206, 255)); // Skyblue back
     gr.FillSolidRect(0, 25, window.Width, 50, RGB(153, 153, 153)); // Gray back
     var backColor = (have_focus) ? RGB(255,255,255) : RGB(225,225,225);
-    gr.FillSolidRect(0, 75, window.Width, window.Height - 75, backColor);
+    gr.FillSolidRect(0, 75, window.Width, pHeight - 75, backColor);
     if(fb.GetNowPlaying()){
         var pbtm  = Math.floor(fb.PlaybackTime);
         var pblen = Math.floor(fb.PlaybackLength);
@@ -281,7 +163,7 @@ function on_paint(gr){
                 var w_per_h = img.Width / img.Height;
                 var x = 0;
                 var y = 75;
-                var h = window.Height - y;
+                var h = pHeight - y;
                 var w = h * w_per_h;
                 var src_x = 0;
                 var src_y = 0;
@@ -322,7 +204,7 @@ function on_paint(gr){
     var playing_item_location = plman.GetPlayingItemLocation();
     var topText = plman.GetPlaylistName(playing_item_location.PlaylistIndex); // Playlist Name
     var left_margin = 20;
-    var v_extra = window.Height - window.MinHeight;
+    var v_extra = pHeight - minHeight;
     var v_margin = v_extra / 4;
     gr.GdiDrawText(mode_str, fnt(20, 6), RGB(255, 255, 255), 405, 25, 800, 30); // モード
     if(songDataDraw){
@@ -333,10 +215,10 @@ function on_paint(gr){
             let playlist_handles = plman.GetPlaylistItems(plman.PlayingPlaylist);
             if(playing_item_location.PlaylistItemIndex + 1 < plman.PlaylistItemCount(plman.PlayingPlaylist)){
                 gr.DrawString("Next > " + get_tf(undefined, playlist_handles[playing_item_location.PlaylistItemIndex+1]),
-                                        fnt(), RGB(0,0,0), 0, window.Height - 25, common_width, 25, 1);
+                                        fnt(), RGB(0,0,0), 0, pHeight - 25, common_width, 25, 1);
             }
 
-            if(100 + 25 * 21 < window.Height){
+            if(100 + 25 * 21 < pHeight){
                 // 後続20曲を表示
                 for(var i = 0; i < 21; i++){
                     try{
@@ -419,12 +301,16 @@ function every_second_check(){
     }
 }
 
+function on_focus(is_focused){
+    have_focus = is_focused;
+    window.Repaint();
+}
+
 function on_playback_seek(){
     window.Repaint();
 }
 
 function on_playback_new_track(){
-    propertiesReloading();
     var playing_item_location = plman.GetPlayingItemLocation();
     console.log(playing_item_location.PlaylistItemIndex + "/" + plman.PlaylistItemCount(plman.PlayingPlaylist));
     ntime = 0;
@@ -595,248 +481,4 @@ function commandAcceptChange(mode){
 function displayTextSet(text, time){
     displayText = text;
     displayRemainTime = time;
-}
-
-//
-// 独自関数
-//
-
-function propertiesReloading(){
-    
-    judgeFormat = window.GetProperty("Judge & Copy Format", "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]");
-
-    rantoro_percent = window.GetProperty("Rantro - StartLocationRange", "10-90");
-    outoro_location = 15;
-    get_outoro_location = window.GetProperty("Outro - StartLocation", "15");
-    try{
-        outoro_location = parseInt(get_outoro_location);
-    }catch(e){
-        outoro_location = 15;
-    }
-    autoCopy = window.GetProperty("Music Properties Autocopy", false);
-    practiceMode = window.GetProperty("Practice Mode - Enabled", false);
-    everyoneAnswerMode = window.GetProperty("Everyone Answer Mode - Enabled", false);
-    openTime = window.GetProperty("Everyone Answer Mode - Open Time", 15);
-    mode = window.GetProperty("Mode - N(ormal) or R(antro) or O(utro)", "N");
-
-    display1 = window.GetProperty("Display Row1 - Year, Genre, Album etc...", "$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // Album: %album%[ by %album artist%]");
-    display2 = window.GetProperty("Display Row2 - AnimeTieup etc...", "$if2(%animetitle%,-)");
-    display3 = window.GetProperty("Display Row3 - Song Title etc...", "%title%");
-    display4 = window.GetProperty("Display Row4 - Artist Name etc...", "[%artist%][ '//' %ARTIST_MEMBER%]");
-
-    songDataDraw =  !(practiceMode || everyoneAnswerMode);
-
-    try{
-        var pers = rantoro_percent.split('-');
-        minPercent = parseInt(pers[0]);
-        maxPercent = parseInt(pers[1]);
-    }
-    catch(e){
-        console.log(e);
-        maxPercent = 90;
-        minPercent = 10;
-    }
-    window.Repaint();
-}
-
-function get_tf(tf, handle){
-    if(tf==undefined) tf = judgeFormat;
-    if(handle==undefined){
-        if (fb.GetNowPlaying()){
-            return fb.TitleFormat(tf).Eval();
-        }
-    }
-    else{
-        return fb.TitleFormat(tf).EvalWithMetadb(handle);
-    }
-}
-
-function getClipboard() { // クリップボードを取得する関数
-    var ff = new ActiveXObject("Forms.Form.1");
-    var tb = ff.Controls.Add("Forms.TextBox.1").Object;
-    tb.MultiLine = true;
-    if (tb.CanPaste) tb.Paste();
-    ff = null;
-    return tb.Text;
-  }
-
-function setClipboard(text) { // クリップボードにコピーする関数
-  var ff = new ActiveXObject("Forms.Form.1");
-  var tb = ff.Controls.Add("Forms.TextBox.1").Object;
-  tb.MultiLine = true;
-  tb.Text = text;
-  tb.SelStart = 0;
-  tb.SelLength = tb.TextLength;
-  tb.Copy();
-  tb = null; ff = null;
-}
-
-
-function fnt(size, style) {
-    // 1..Bold 2..Italic(英字のみ？) 4..underline 8..breakline
-    // 組み合わせるときは足す
-    if(size==undefined) size = 18;
-    if(style==undefined) style = 0;
-    return gdi.Font("Meiryo UI", size, style);
-}
-
-function open_song_data() {
-    songDataDraw = true;
-    fn_sabi();
-    skipTime = parseInt(fb.PlaybackTime + 5);
-    if(saveFilename != ""){
-        appendLineFile("D:\\Quiz\\AIQ\\history\\" + saveFilename, get_tf());
-    }
-}
-
-function open_song_data_with_repaint(){
-    open_song_data();
-    window.Repaint();
-}
-
-function appendLineFile(filename, content){
-    var old = "";
-    try{
-        old = utils.ReadTextFile(filename);
-        old += "\n"
-    }
-    catch{
-        console.log("Make new file: " + filename);
-    }
-    finally{
-        utils.WriteTextFile(filename, old + content);
-        console.log("Write:" + content );
-    }
-}
-
-function makePlaylist() {
-    var enter = getClipboard();
-    var lines = enter.split('\n');
-    var d = new Date();
-    var year = d.getFullYear();
-    var month = d.getMonth()+1;
-    var day = d.getDate();
-    var hour = d.getHours();
-    var min = d.getMinutes();
-    var plname = year + "/" + month + "/" + day + " " + hour + ":" + ((min < 10) ? "0" : "") + min
-    var plid = plman.PlaylistCount;
-    plman.CreatePlaylist(plid, plname);
-    var modeCheck = lines[0].split(",");
-    if(modeCheck[0] == "balance"){
-        // 未実装
-        console.log("balance mode is unavailable");
-        return;
-        console.log("Start making playlist by balance: " + plname);
-        var query_lists = [];
-        var gravitys = [];
-        var totalWeight = 0;
-        var base = "";
-        var pickSongs = 0;
-        lines.forEach(function(line){
-            try{
-                if(line == "") return; // 空白ならスキップ;
-                var datas = line.split(',');
-                if(pickSongs == 0){
-                    pickSongs = parseInt(datas[1]);
-                    console.log("Pick Song: " + pickSongs + "songs");
-                    return;
-                }
-                if(datas[0] == "") {
-                    base = datas[1];
-                }else{
-                    var n = parseInt(datas[0]);
-                    query = datas[1];
-                    if(base == "" && datas[1] == ""){
-                        console.log("Skip");
-                        return;
-                    }
-                    if(base == "") query = datas[1];
-                    else if(datas[1] == "") query = base;
-                    else query = "(" + base + ") AND (" + datas[1] + ")";
-                    var hl = getHandleList(9999999999, query, false);
-                    totalWeight += hl.Count * n;
-                    gravitys.push(hl.Count * n);
-                    query_lists.push(query);
-                }
-            }catch(e){
-                console.log("Error:" + line);
-                console.log(e);
-            }
-        });
-        console.log("Total Weight: " + totalWeight);
-        for(var i = 0; i < query_lists.length; i++){
-            var percent = gravitys[i] / totalWeight;
-            var songs = parseInt(pickSongs * percent) + 1;
-            console.log("Weight: " + gravitys[i] + " -> " + songs + " songs (" +  percent * 100 + "%)")
-            var hl = getHandleList(songs, query_lists[i], true);
-            plman.InsertPlaylistItems(plid, 0, hl)
-        }
-    }
-    else{
-        console.log("Start making playlist: " + plname);
-
-        var base = "";
-        lines.forEach(function(line){
-            try{
-                if(line == "") return; // 空白ならスキップ
-                var datas = line.split(',');
-                if(datas[0] == "") {
-                    base = datas[1];
-                    console.log("MPS > Set Base: " + base);
-                }else{
-                    var n = parseInt(datas[0]);
-                    query = datas[1];
-                    if(base == "" && datas[1] == ""){
-                        console.log("Skip");
-                        return;
-                    }
-                    
-                    if(base == "") query = datas[1];
-                    else if(datas[1] == "") query = base;
-                    else query = "(" + base + ") AND (" + datas[1] + ")";
-
-                    hl = fb.GetQueryItems(fb.GetLibraryItems(), query);
-                    picklist = new FbMetadbHandleList();
-
-                    for(var i = 0; i < n; i++)
-                    {
-                        if(hl.Count <= 0){
-                            n = i;
-                            break;
-                        } 
-                        var r = Math.floor(Math.random() * hl.Count);
-                        picklist.Add(hl[r]);
-                        hl.RemoveById(r);
-                    }
-                    // if(hl.Count > n){
-                    //     hl.RemoveRange(n, hl.Count); 
-                    // }
-                    plman.InsertPlaylistItems(plid, 0, picklist);
-                    console.log(datas[1] + "->" + n + "Songs");
-                    // No error, but playlist made by that is always same.  
-                    // It needs be append shuffle function.
-                }
-            }catch(e){
-                console.log("Error:" + line);
-                console.log(e);
-            }
-        });
-    }
-}
-
-function getHandleList(n, query, write){
-    var handle_list = plman.GetPlaylistItems(-1);
-    var cand_items = fb.GetQueryItems(fb.GetLibraryItems(), query);
-    var cand_count = cand_items.Count;
-    if(cand_items.Count <= n) handle_list = cand_items;
-    else{
-        while(n > 0){
-            var idx = Math.floor(Math.random() * cand_items.Count);
-            handle_list.Add(cand_items.Item(idx));
-            cand_items.RemoveById(idx);
-            n -= 1;
-        }
-    }
-    if(write) console.log(handle_list.Count + " songs <- " + query + " // All: " + cand_count + " songs" );
-    return handle_list;
 }
