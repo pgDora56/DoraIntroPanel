@@ -5,25 +5,13 @@
 
 window.DefinePanel("DoraIntroPanel", { author: "Dora F." });
 
-// curl TEST
-/*
-$.ajax({
-    type: 'POST',
-    url: 'https://discordapp.com/api/webhooks/563387125446344724/Rm-ZNzNdQzHgLQKnV7EzDSJ3A23RdqPU5X3R2THXIaOryQvFR9OVNx2TfKJxyYFrIWEY',
-    data:{"username": "Mocho", "avatar_url": "https://pbs.twimg.com/media/D93CoIaUIAAmklR.jpg","content":"Wake up"},
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  }).then(function(response){
-    console.log(response)
-  })
-*/
 var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパスを指定する
 
 include(`${fb.ComponentPath}docs\\Flags.js`);
 include(`${fb.ComponentPath}docs\\Helpers.js`);
 
-include(`parts.js`);
+include(`button.js`);
+include(`playlist.js`);
 include(`myfuncs.js`);
 include(`callbackfuncs.js`);
 

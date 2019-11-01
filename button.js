@@ -50,13 +50,3 @@ function button_img(normal_path,hover_path){
     this.normal = normal_path;
     this.hover = hover_path;
 }
-
-
-// a whole of Playlist
-class playlist{
-    
-}
-
-class playlistParts{
-
-}
