@@ -6,7 +6,26 @@
 window.DefinePanel("DoraIntroPanel", { author: "Dora F." });
 
 
-var img_path = fb.ProfilePath+"/panel/img/"; // imgフォルダまでのパスを指定する
+
+// ==============================================
+// 以下直接編集するべき部分
+//
+
+// imgフォルダまでのパスを指定する
+//
+var img_path = fb.ProfilePath+"/panel/img/"; 
+
+ 
+// 保存するデータの基準となるパスを指定する
+// 既存のフォルダを指定したほうが良い(環境に依る?)
+//
+var savedata_root_path = fb.ProfilePath + "/history/"; 
+
+// ここまで
+// ==============================================
+
+
+
 
 include(`${fb.ComponentPath}docs\\Flags.js`);
 include(`${fb.ComponentPath}docs\\Helpers.js`);
@@ -27,6 +46,9 @@ var playing = "";
 
 var PlayingLocation = -1; // 再生位置を毎度記録
 
+var correctFlag = false;
+var correctCount = 0;
+var wrongCount = 0;
 
 var judgeFormat = window.GetProperty("Judge & Copy Format", "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]");
 
@@ -130,7 +152,6 @@ var rec_img = new button_img(img_path+"rec.png",img_path+"rec_hover.png");
 var rec = new button(300, 25, 50, 50, rec_img, fn_rec, "サビ記録");
 
 var plus_img = new button_img(img_path+"plus.png",img_path+"plus_hover.png");
-// var remove = new button(350, 0, 50, 50, remove_img, remove_duplicated_data, "重複削除処理");
 var plus = new button(350, 25, 50, 50, plus_img, 
     makePlaylist,
     //open_song_data,
@@ -139,11 +160,6 @@ var plus = new button(350, 25, 50, 50, plus_img,
 
 var musix_img = new button_img(img_path+"musix.png", img_path+"musix_hover.png");
 var musix = new button(250, 25, 50, 50, musix_img, fn_sabi, "サビへ");
-
-// var autocopy_on_img = new button_img(img_path+"autocopy_on.png", img_path+"autocopy_on_hover.png");
-// var autocopy_off_img = new button_img(img_path+"autocopy_off.png", img_path+"autocopy_off_hover.png");
-// var autocopy_on = new button(350, 0, 50, 50, autocopy_on_img, fn_autocopy, "AutoCopyをオフにする");
-// var autocopy_off = new button(350, 0, 50, 50, autocopy_off_img, fn_autocopy_off, "AutoCopyをオンにする");
 
 var buttons = [musix, rec, stop, pause, play, previous, next, plus];
 
@@ -172,20 +188,9 @@ function fn_next(){
 }
 
 
-// function fn_autocopy_on(){
-//     autoCopy = false;
-//     window.Repaint();
-// }
-
-// function fn_autocopy_off(){
-//     autoCopy = true;
-//     window.Repaint();
-// }
-
 function fn_sabi(){
     var time = fb.TitleFormat("%RECORD_TIME%").Eval();
     console.log(time=="?");
-    // console.log(time == "?");
     try{
         if(time != "?") {
             fb.PlaybackTime = time;
@@ -212,7 +217,6 @@ function fn_rec(){
     console.log(tfo.Eval());
     var data = fb.GetNowPlaying();
     handle.Add(data);
-    // data.UpdateFileInfoSimple("RECORD_TIME", tfo.Eval());
     handle.UpdateFileInfoFromJSON(
         JSON.stringify({
             'RECORD_TIME' : tfo.Eval()
@@ -230,12 +234,6 @@ function on_mouse_move(x,y){
             b.cs("normal");
         }
     });
-    // if(autoCopy){
-    //     if(autocopy_on.trace(x,y)) autocopy_on.cs("hover");
-    // }
-    // else{
-    //     if(autocopy_off.trace(x,y)) autocopy_off.paint("normal");
-    // }
 }
 
 function on_mouse_lbtn_up(x,y){
@@ -245,12 +243,6 @@ function on_mouse_lbtn_up(x,y){
        }
     });
     have_focus = true;
-    // if(autoCopy){
-    //     if(autocopy_on.trace(x,y)) autocopy_on.lbtn_up(x,y);
-    // }
-    // else{
-    //     if(autocopy_off.trace(x,y)) autocopy_off.lbtn_up(x,y);
-    // }
 }
 
 //==============================================
@@ -286,7 +278,6 @@ function on_paint(gr){
                 var src_h = img.Height;
                 var angle = 360 * pbtm / pblen;
                 var alpha = 40;
-                // gr.FillGradRect(510, 10 * w_per_h, w, h, 0, RGB(230, 230, 230), RGB(255, 255, 255));
                 gr.DrawImage(img, x, y, w, h, src_x, src_y, src_w, src_h, angle, alpha);
             }
          var timeMin = Math.floor(pbtm / 60);
@@ -317,7 +308,8 @@ function on_paint(gr){
     if(everyoneAnswerMode) { mode_str += " - 全員解答モード" }
     else if(practiceMode) { mode_str += " - 練習モード" }
     var playing_item_location = plman.GetPlayingItemLocation();
-    var topText = plman.GetPlaylistName(playing_item_location.PlaylistIndex); // Playlist Name
+    var cwcount = ((correctFlag) ? "Checked" : "Unchecked") + "/" + correctCount + "-" + wrongCount + " | ";
+    var topText = cwcount + plman.GetPlaylistName(playing_item_location.PlaylistIndex); // Playlist Name
     var left_margin = 20;
     var v_extra = window.Height - window.MinHeight;
     var v_margin = v_extra / 4;
@@ -365,10 +357,6 @@ function on_paint(gr){
                                     fnt(undefined), clr, left_margin, 80, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat(display2).Eval(), 
                                     fnt(26, 1), clr, left_margin, 105 + v_margin, common_width, 100, 0);
-        // gr.DrawString(fb.TitleFormat("$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // 難易度: %publisher%").Eval(), 
-        //                             fnt(undefined), RGB(0, 0, 0), left_margin, 80, common_width, 100);
-        // gr.DrawString(fb.TitleFormat("$if2(%album%,-)").Eval(), 
-        //                             fnt(26, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, common_width, 100);
         gr.DrawString(fb.TitleFormat(display3).Eval(), 
                                     fnt(30, 1), clr, left_margin, 140 + v_margin * 2, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat(display4).Eval(), 
@@ -376,6 +364,7 @@ function on_paint(gr){
         gr.DrawString(fb.TitleFormat("[サビ: %RECORD_TIME%s]").Eval(), fnt(), RGB(255, 255, 255), 405, 50, 100, 30, 0);
 
         if(fb.IsPlaying) topText += ' [' + (playing_item_location.PlaylistItemIndex + 1) + "/" + plman.PlaylistItemCount(plman.PlayingPlaylist) + ']'; // 何曲目か/プレイリスト総曲数
+        if(everyoneAnswerMode && (skipTime - pbtm) <= 3) gr.DrawString((skipTime - pbtm), fnt(60, 1), RGB(255,0,0), window.Width / 2 - 50, window.Height / 2 - 50, 100,100,0);
 
     }
     else if(everyoneAnswerMode){
@@ -450,6 +439,13 @@ function on_playback_new_track(){
     if(autoCopy){
         setClipboard(nowPlaying);
     }
+    if(correctFlag){
+        correctCount += 1;
+    }else{
+        wrongCount += 1;
+    }
+
+    correctFlag = false;
 }
 
 function on_playback_pause(state) {
@@ -485,6 +481,11 @@ function on_key_down(vkey) {
         saveReady = true;
         console.log("saveReady turns to true");
     }
+    else if(vkey == 67){
+        // Push C
+        correctFlag = !correctFlag;
+        window.Repaint();
+    }
     else if(vkey == 83 && expertKeyOperation || vkey == 40) {
         // Push Down or Push S (ExpertKeyOperation Mode)
         // Play & Pause
@@ -492,7 +493,7 @@ function on_key_down(vkey) {
             console.log(plman.PlayingPlaylist);
             if(fb.IsPaused){             
                 if(saveReady && saveFilename != ""){
-                    appendLineFile("D:\\Quiz\\AIQ\\history\\" + saveFilename, get_tf());
+                    appendLineFile(savedata_root_path + saveFilename, "[" + getNowTime() + "] " + get_tf());
                     saveReady = false;
                 }
             }
@@ -598,6 +599,17 @@ function displayTextSet(text, time){
 // 独自関数
 //
 
+function getNowTime(){
+    var date = new Date();
+    var str = date.getFullYear()
+    + '/' + ('0' + (date.getMonth() + 1)).slice(-2)
+    + '/' + ('0' + date.getDate()).slice(-2)
+    + ' ' + ('0' + date.getHours()).slice(-2)
+    + ':' + ('0' + date.getMinutes()).slice(-2)
+    + ':' + ('0' + date.getSeconds()).slice(-2);
+    return str;
+}
+
 function propertiesReloading(){
     
     judgeFormat = window.GetProperty("Judge & Copy Format", "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]");
@@ -682,7 +694,7 @@ function open_song_data() {
     fn_sabi();
     skipTime = parseInt(fb.PlaybackTime + 5);
     if(saveFilename != ""){
-        appendLineFile("D:\\Quiz\\AIQ\\history\\" + saveFilename, get_tf());
+        appendLineFile(savedata_root_path + saveFilename, "[" + getNowTime() + "] " + get_tf());
     }
 }
 
