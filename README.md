@@ -14,11 +14,26 @@ foobar2000's panel for music intro quiz using Spider Monkey Panel
 * Support for you to give intro questions
   * The next song can be chosen smoothly
 
-## Usage
+## Setup
 1. Install spider monkey panel
 2. Download this panel & img folder
 3. Change `img_path` of `panel.js`
 4. Spider monkey panel's configure write `include( [Path to panel.js] );`
+
+## Usage
+|Key|Command|Example|
+|-|-|-|
+|Left|Previous Track||
+|Right|Next Track||
+|Down|Play/Pause||
+|Up|Go to record position||
+|<|Volume Down|
+|>|Volume Up|
+|:`Number`|Go `Number`sec|:50 -> go 0:50|
+|||:417 -> go 6:57|
+|:`min`:`sec`|Go `min`:`sec`|:4:17 -> go 4:17|
+|Esc|cancel command, ":`Number`" and ":`min`:`sec`"
+
 
 ## プレイリスト自動生成機能
 条件と曲数を指定することで、その条件に合う曲をランダムでピックし、プレイリストを生成します。
