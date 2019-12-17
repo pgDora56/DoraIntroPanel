@@ -16,7 +16,7 @@ foobar2000's panel for music intro quiz using Spider Monkey Panel
 
 ## Usage
 1. Install spider monkey panel
-2. Download this panel
+2. Download this panel & img folder
 3. Change `img_path` of `panel.js`
 4. Spider monkey panel's configure write `include( [Path to panel.js] );`
 
