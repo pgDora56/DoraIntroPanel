@@ -29,7 +29,7 @@ var display2 = "$if2(%animetitle%,-)"; // "Display Row2 - AnimeTieup etc..."
 var display3 = "%title%"; // "Display Row3 - Song Title etc..."
 var display4 = "[%artist%][ '//' %ARTIST_MEMBER%]"; // "Display Row4 - Artist Name etc..." 
 
-var judgeFormat = "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]";
+var judgeFormat = "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]");
 
 var xhr = new ActiveXObject("Microsoft.XMLHTTP"); 
 // new ActiveXObject('Msxml2.XMLHTTP');
@@ -46,8 +46,7 @@ xhr.onreadystatechange = function(){
         display2 = jsonData.display2;
         display3 = jsonData.display3;
         display4 = jsonData.display4;
-        judgeFormat = jsonData.format;
-        console.log(jsonData);
+        console.log(jsonData.display1);
     }
 };
 xhr.send(null);
@@ -77,44 +76,33 @@ var correctCount = 0;
 var wrongCount = 0;
 
 
-var mode = window.GetProperty("1. Mode - N(ormal) or R(antro) or O(utro)", "N");
-var rantoro_percent = window.GetProperty("1.1. Rantro - StartLocationRange", "10-90");
+var rantoro_percent = window.GetProperty("Rantro - StartLocationRange", "10-90");
 var outoro_location = 15;
-var get_outoro_location = window.GetProperty("1.2. Outro - StartLocation", "15");
+var get_outoro_location = window.GetProperty("Outro - StartLocation", "15");
 try{
     outoro_location = parseInt(get_outoro_location);
 }catch(e){
     outoro_location = 15;
 }
-var autoCopy = window.GetProperty("3.1. Music Properties Autocopy", false);
-var practiceMode = window.GetProperty("2.1. Practice Mode - Enabled", false);
-var everyoneAnswerMode = window.GetProperty("2.2. Everyone Answer Mode - Enabled", false);
-var openTime = window.GetProperty("2.2.1. Everyone Answer Mode - Open Time", 15);
+var autoCopy = window.GetProperty("Music Properties Autocopy", false);
+var practiceMode = window.GetProperty("Practice Mode - Enabled", false);
+var everyoneAnswerMode = window.GetProperty("Everyone Answer Mode - Enabled", false);
+var openTime = window.GetProperty("Everyone Answer Mode - Open Time", 15);
+var mode = window.GetProperty("Mode - N(ormal) or R(antro) or O(utro)", "N");
 
-var expertKeyOperation = window.GetProperty("3.2. Expert Key Operation", false);
+var expertKeyOperation = window.GetProperty("Expert Key Operation", false);
 
 
-var nextSongSearch = window.GetProperty("3.4. View Next Song Search Panel", false);
+var nextSongSearch = window.GetProperty("View Next Song Search Panel", false);
 
-var autoStopTime = window.GetProperty("2.3. Auto Stop - 0: unavailable", 0);
+var autoStopTime = window.GetProperty("Auto Stop - 0: unavailable", 0);
 
-var saveFilename = window.GetProperty("3.3. Play history save to:", "");
+var saveFilename = window.GetProperty("Play history save to:", "");
 var saveReady = false;
 
 var songDataDraw = !(practiceMode || everyoneAnswerMode);
 
 var skipTime = Infinity;
-
-try{
-    var pers = rantoro_percent.split('-');
-    minPercent = parseInt(pers[0]);
-    maxPercent = parseInt(pers[1]);
-}
-catch(e){
-    console.log(e);
-    maxPercent = 90;
-    minPercent = 10;
-}
 
 
 //==============================================
@@ -442,6 +430,7 @@ function on_playback_seek(){
 }
 
 function on_playback_new_track(){
+    propertiesReloading();
     var playing_item_location = plman.GetPlayingItemLocation();
     console.log(playing_item_location.PlaylistItemIndex + "/" + plman.PlaylistItemCount(plman.PlayingPlaylist));
     ntime = 0;
@@ -641,6 +630,43 @@ function getNowTime(){
     return str;
 }
 
+function propertiesReloading(){
+    
+    judgeFormat = window.GetProperty("Judge & Copy Format", "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]");
+
+    rantoro_percent = window.GetProperty("Rantro - StartLocationRange", "10-90");
+    outoro_location = 15;
+    get_outoro_location = window.GetProperty("Outro - StartLocation", "15");
+    try{
+        outoro_location = parseInt(get_outoro_location);
+    }catch(e){
+        outoro_location = 15;
+    }
+    autoCopy = window.GetProperty("Music Properties Autocopy", false);
+    practiceMode = window.GetProperty("Practice Mode - Enabled", false);
+    everyoneAnswerMode = window.GetProperty("Everyone Answer Mode - Enabled", false);
+    openTime = window.GetProperty("Everyone Answer Mode - Open Time", 15);
+    mode = window.GetProperty("Mode - N(ormal) or R(antro) or O(utro)", "N");
+
+    display1 = window.GetProperty("Display Row1 - Year, Genre, Album etc...", "$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // Album: %album%[ by %album artist%]");
+    display2 = window.GetProperty("Display Row2 - AnimeTieup etc...", "$if2(%animetitle%,-)");
+    display3 = window.GetProperty("Display Row3 - Song Title etc...", "%title%");
+    display4 = window.GetProperty("Display Row4 - Artist Name etc...", "[%artist%][ '//' %ARTIST_MEMBER%]");
+
+    songDataDraw =  !(practiceMode || everyoneAnswerMode);
+
+    try{
+        var pers = rantoro_percent.split('-');
+        minPercent = parseInt(pers[0]);
+        maxPercent = parseInt(pers[1]);
+    }
+    catch(e){
+        console.log(e);
+        maxPercent = 90;
+        minPercent = 10;
+    }
+    window.Repaint();
+}
 
 function get_tf(tf, handle){
     if(tf==undefined) tf = judgeFormat;
