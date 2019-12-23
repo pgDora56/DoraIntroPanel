@@ -71,6 +71,7 @@ var spRantroCD = 0;
 var spRantroSeed = 1;
 var ntime = 0;
 var playing = "";
+var everyCheckPass = false;
 
 var PlayingLocation = -1; // 再生位置を毎度記録
 
@@ -334,7 +335,7 @@ function on_paint(gr){
 
     var mode_str = "通常モード";
     if(specialRantoroMode || mode == "R") {
-        mode_str = "ラントロモード";
+        mode_str = ((specialRantoroMode) ? "SP" : "") + "ラントロモード";
         mode_str += "(" + minPercent + "% ～ " + maxPercent + "%)";
         if(rantroStartPercent != -1) mode_str += " StartAt:" + rantroStartPercent + "%";
     }
@@ -428,11 +429,20 @@ function on_playback_time(t){
 }
 
 function every_second_check(){
+    if(everyCheckPass){
+        everyCheckPass = false;
+        return;
+    }
     t = PlayingLocation;
     if(specialRantoroMode){
-        spRantroCD -= 1;
-        if(spRantroCD < 1){
+        if(t - spRantroCD >= 0.3){
             // Next Position
+            var startPos = (minPercent + Math.random() * (maxPercent - minPercent)) / 100;
+            rantroStartPercent = parseInt(startPos * 100);
+            console.log("MoveAt:" + (fb.PlaybackLength * startPos));
+            fb.PlaybackTime = fb.PlaybackLength * startPos;
+            spRantroCD = fb.PlaybackTime;
+            everyCheckPass = true;
         }
     }
     if(everyoneAnswerMode){
@@ -463,14 +473,16 @@ function on_playback_new_track(){
     var nowPlaying = get_tf();
     console.log(get_tf());
     rantroStartPercent = -1;
-    if(mode != "N"){
+    if(mode != "N" || specialRantoroMode){
         if(playing != nowPlaying){
             if(mode == "R" || specialRantoroMode){
                 var startPos = (minPercent + Math.random() * (maxPercent - minPercent)) / 100;
                 rantroStartPercent = parseInt(startPos * 100);
                 console.log("StartAt:" + (fb.PlaybackLength * startPos));
                 fb.PlaybackTime = fb.PlaybackLength * startPos;
-                if(specialRantoroMode) spRantroCD = 1;
+                if(specialRantoroMode) {
+                    spRantroCD = fb.PlaybackTime;
+                }
             }else if(mode == "O"){
                 fb.PlaybackTime = fb.PlaybackLength - outoro_location;
             }
