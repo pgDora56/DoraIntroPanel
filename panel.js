@@ -103,7 +103,7 @@ var autoStopTime = window.GetProperty("2.3. Auto Stop - 0: unavailable", 0);
 
 var saveFilename = window.GetProperty("3.3. Play history save to:", "");
 
-var specialRantoroMode = window.GetProperty("1.0. Special Rantoro Mode", false);
+var superRantoroMode = window.GetProperty("1.0. Super Rantoro Mode", false);
 
 var saveReady = false;
 
@@ -334,8 +334,8 @@ function on_paint(gr){
     });
 
     var mode_str = "通常モード";
-    if(specialRantoroMode || mode == "R") {
-        mode_str = ((specialRantoroMode) ? "SP" : "") + "ラントロモード";
+    if(superRantoroMode || mode == "R") {
+        mode_str = ((superRantoroMode) ? "SP" : "") + "ラントロモード";
         mode_str += "(" + minPercent + "% ～ " + maxPercent + "%)";
         if(rantroStartPercent != -1) mode_str += " StartAt:" + rantroStartPercent + "%";
     }
@@ -434,7 +434,7 @@ function every_second_check(){
         return;
     }
     t = PlayingLocation;
-    if(specialRantoroMode){
+    if(superRantoroMode){
         if(t - spRantroCD >= 0.3){
             // Next Position
             var startPos = (minPercent + Math.random() * (maxPercent - minPercent)) / 100;
@@ -473,14 +473,14 @@ function on_playback_new_track(){
     var nowPlaying = get_tf();
     console.log(get_tf());
     rantroStartPercent = -1;
-    if(mode != "N" || specialRantoroMode){
+    if(mode != "N" || superRantoroMode){
         if(playing != nowPlaying){
-            if(mode == "R" || specialRantoroMode){
+            if(mode == "R" || superRantoroMode){
                 var startPos = (minPercent + Math.random() * (maxPercent - minPercent)) / 100;
                 rantroStartPercent = parseInt(startPos * 100);
                 console.log("StartAt:" + (fb.PlaybackLength * startPos));
                 fb.PlaybackTime = fb.PlaybackLength * startPos;
-                if(specialRantoroMode) {
+                if(superRantoroMode) {
                     spRantroCD = fb.PlaybackTime;
                 }
             }else if(mode == "O"){
