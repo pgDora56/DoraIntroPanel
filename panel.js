@@ -167,7 +167,7 @@ function button_img(normal_path,hover_path){
 }
 
 // var sabi_img = new button_img(img_path+"sabi.png",img_path+"sabi_hover.png");
-// var sabi = new button(10, 155, 100, 50, sabi_img, fn_sabi, "サビへ");
+// var sabi = new button(10, 155, 100, 50, sabi_img, fn_gorec, "サビへ");
 
 var stop_img = new button_img(img_path+"stop.png", img_path+"stop_hover.png");
 var stop = new button(0, 25, 50, 50, stop_img, fn_stop, "停止");
@@ -195,7 +195,7 @@ var plus = new button(350, 25, 50, 50, plus_img,
     "プレイリスト自動作成");
 
 var musix_img = new button_img(img_path+"musix.png", img_path+"musix_hover.png");
-var musix = new button(250, 25, 50, 50, musix_img, fn_sabi, "サビへ");
+var musix = new button(250, 25, 50, 50, musix_img, fn_gorec, "サビへ");
 
 var buttons = [musix, rec, stop, pause, play, previous, next, plus];
 
@@ -223,18 +223,19 @@ function fn_next(){
     fb.Next();
 }
 
-function fn_sabi(no){
+function fn_gorec(no){
     if(no==undefined) no = 1;
     no -= 1;
     tarr = rec_to_array();
     try{
         if(tarr != undefined) {
-            fb.PlaybackTime = tarr[no];
+            if(tarr[no] != "-1"){
+                fb.PlaybackTime = tarr[no];
+                return;
+            }
         }
-        else{
-            console.log("Don't set Sabi");
-            console.log("Sabi:" + tarr);
-        }
+        console.log("Don't set Sabi");
+        console.log("Sabi:" + tarr);
     }
     catch{
         console.log("Can't move to Sabi");
@@ -255,7 +256,8 @@ function fn_rec(no){
     var handle = fb.CreateHandleList();
     var tfo = fb.TitleFormat("%playback_time_seconds%");
     console.log(tfo.Eval());
-    tarr[no] = tfo.Eval();
+    if(tarr[no] == tfo.Eval()) tarr[no] = "-1";
+    else tarr[no] = tfo.Eval();
     saveData = tarr[0];
     for(i=1; i<10; i++) {
         saveData += "," + tarr[i];
@@ -418,7 +420,17 @@ function on_paint(gr){
                                     fnt(30, 1), clr, left_margin, 140 + v_margin * 2, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat(display4).Eval(), 
                                     fnt(20), clr, left_margin, 180 + v_margin * 3, common_width, 100, 0);
-        gr.DrawString(fb.TitleFormat("[サビ: %RECORD_TIME%s]").Eval(), fnt(), RGB(255, 255, 255), 405, 50, 100, 30, 0);
+        var rectime = fb.TitleFormat("[%RECORD_TIME%]").Eval();
+        if(rectime != ""){
+            var tarr = rectime.split(",");
+            var recText = "REC:" + ((tarr[0]=="-1") ? "-" : tarr[0]);
+            for(i=1; i<tarr.length; i++)
+            {
+                recText += ",";
+                recText += (tarr[i] == "-1") ? "-" : tarr[i];
+            }
+            gr.DrawString(recText, fnt(), RGB(255, 255, 255), 405, 50, 500, 30, 0);
+        }
 
         if(fb.IsPlaying) topText += ' [' + (playing_item_location.PlaylistItemIndex + 1) + "/" + plman.PlaylistItemCount(plman.PlayingPlaylist) + ']'; // 何曲目か/プレイリスト総曲数
         if(everyoneAnswerMode && (skipTime - pbtm) <= 3) gr.DrawString((skipTime - pbtm), fnt(60, 1), RGB(255,0,0), window.Width / 2 - 50, window.Height / 2 - 50, 100,100,0);
@@ -545,7 +557,7 @@ function on_key_down(vkey) {
     else if(vkey == 87 && expertKeyOperation || vkey == 38) {
         // Push Up or Push W (ExpertKeyOperation Mode)
        // Sabi
-        fn_sabi();
+        fn_gorec();
     }
     else if(vkey == 68 && expertKeyOperation || vkey == 39) {
         // Push Right or Push D (ExpertKeyOperation Mode)
@@ -607,20 +619,23 @@ function on_key_down(vkey) {
     else if(48 <= vkey && vkey <= 57){
         // Push Number key
         var number = vkey - 48;
-        if(nextSongSearch){
-            if(accept_command){
-                commandAppend(number);
-            }else{
-                // plman.SetPlaylistFocusItem(plman.ActivePlaylist, [plman.GetPlayingItemLocation().PlaylistItemIndex], true);
-                var playing_item_location = plman.GetPlayingItemLocation();
-                for(var i=0;i<playing_item_location.PlaylistItemIndex;i++){
-                    plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, i , false);
-                }
-                plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, playing_item_location.PlaylistItemIndex, true);
-                plman.MovePlaylistSelection(plman.ActivePlaylist, (number == 0) ? 10 : number);
-                window.Repaint();
+        if(accept_command){
+            commandAppend(number);
+        }else if(nextSongSearch){
+            var playing_item_location = plman.GetPlayingItemLocation();
+            for(var i=0;i<playing_item_location.PlaylistItemIndex;i++){
+                plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, i , false);
             }
+            plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, playing_item_location.PlaylistItemIndex, true);
+            plman.MovePlaylistSelection(plman.ActivePlaylist, (number == 0) ? 10 : number);
+            window.Repaint();
+        }else{
+            fn_gorec(number);
         }
+    }
+    else if(112 <= vkey && vkey <= 121) {
+        var number = vkey - 112;
+        fn_rec(number + 1);
     }
     else if(accept_command){
         if(vkey == 8){
@@ -730,7 +745,7 @@ function fnt(size, style) {
 
 function open_song_data() {
     songDataDraw = true;
-    fn_sabi();
+    fn_gorec();
     skipTime = parseInt(fb.PlaybackTime + 5);
     if(saveFilename != ""){
         appendLineFile(savedata_root_path + saveFilename, "[" + getNowTime() + "] " + get_tf());
