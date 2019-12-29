@@ -40,14 +40,12 @@ xhr.onreadystatechange = function(){
     // ローカルファイル用
     if (xhr.readyState === 4 && xhr.status === 0){
         const settingFile = xhr.responseText; // 外部ファイルの内容
-        console.log(settingFile);
         const jsonData = JSON.parse(settingFile);
         display1 = jsonData.display1;
         display2 = jsonData.display2;
         display3 = jsonData.display3;
         display4 = jsonData.display4;
         judgeFormat = jsonData.format;
-        console.log(jsonData);
     }
 };
 xhr.send(null);
@@ -225,22 +223,22 @@ function fn_next(){
     fb.Next();
 }
 
-
-function fn_sabi(){
-    var time = fb.TitleFormat("%RECORD_TIME%").Eval();
-    console.log(time=="?");
+function fn_sabi(no){
+    if(no==undefined) no = 1;
+    no -= 1;
+    tarr = rec_to_array();
     try{
-        if(time != "?") {
-            fb.PlaybackTime = time;
+        if(tarr != undefined) {
+            fb.PlaybackTime = tarr[no];
         }
         else{
             console.log("Don't set Sabi");
-            console.log("Sabi:" + time);
+            console.log("Sabi:" + tarr);
         }
     }
     catch{
         console.log("Can't move to Sabi");
-        console.log("Sabi:" + time);
+        console.log("Sabi:" + tarr);
     }
 }
 
@@ -249,20 +247,41 @@ function on_focus(is_focused){
     window.Repaint();
 }
 
-function fn_rec(){
+function fn_rec(no){
+    if(no == undefined) no = 1;
+    no -= 1;
+    tarr = rec_to_array();
+    if(tarr == undefined) tarr = ["-1","-1","-1","-1","-1","-1","-1","-1","-1","-1"];
     var handle = fb.CreateHandleList();
     var tfo = fb.TitleFormat("%playback_time_seconds%");
     console.log(tfo.Eval());
+    tarr[no] = tfo.Eval();
+    saveData = tarr[0];
+    for(i=1; i<10; i++) {
+        saveData += "," + tarr[i];
+    }
+
     var data = fb.GetNowPlaying();
     handle.Add(data);
     handle.UpdateFileInfoFromJSON(
         JSON.stringify({
-            'RECORD_TIME' : tfo.Eval()
+            'RECORD_TIME' : saveData
         })
     );
     window.Repaint();
 }
 
+function rec_to_array(){
+    var time = fb.TitleFormat("%RECORD_TIME%").Eval();
+    if(time=="?"){
+        return undefined;
+    }
+    var arr = time.split(",");
+    while(arr.length < 10){
+        arr.push("-1");
+    }
+    return arr;
+}
 
 function on_mouse_move(x,y){
     buttons.forEach(function(b){
@@ -588,17 +607,19 @@ function on_key_down(vkey) {
     else if(48 <= vkey && vkey <= 57){
         // Push Number key
         var number = vkey - 48;
-        if(accept_command){
-            commandAppend(number);
-        }else{
-            // plman.SetPlaylistFocusItem(plman.ActivePlaylist, [plman.GetPlayingItemLocation().PlaylistItemIndex], true);
-            var playing_item_location = plman.GetPlayingItemLocation();
-            for(var i=0;i<playing_item_location.PlaylistItemIndex;i++){
-                plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, i , false);
+        if(nextSongSearch){
+            if(accept_command){
+                commandAppend(number);
+            }else{
+                // plman.SetPlaylistFocusItem(plman.ActivePlaylist, [plman.GetPlayingItemLocation().PlaylistItemIndex], true);
+                var playing_item_location = plman.GetPlayingItemLocation();
+                for(var i=0;i<playing_item_location.PlaylistItemIndex;i++){
+                    plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, i , false);
+                }
+                plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, playing_item_location.PlaylistItemIndex, true);
+                plman.MovePlaylistSelection(plman.ActivePlaylist, (number == 0) ? 10 : number);
+                window.Repaint();
             }
-            plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, playing_item_location.PlaylistItemIndex, true);
-            plman.MovePlaylistSelection(plman.ActivePlaylist, (number == 0) ? 10 : number);
-            window.Repaint();
         }
     }
     else if(accept_command){
