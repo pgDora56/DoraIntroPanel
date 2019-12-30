@@ -5,26 +5,21 @@
 
 window.DefinePanel("DoraIntroPanel", { author: "Dora F." });
 
+var rootDirectory = fb.ProfilePath + "DoraIntroPanel/" // Panel全体のRootFolder
 
-
-// ==============================================
-// 以下直接編集するべき部分
-//
-
+consoleWrite("Root Directory: " + rootDirectory);
 // imgフォルダまでのパスを指定する
 //
-var img_path = fb.ProfilePath+"/panel/img/"; 
+var img_path = rootDirectory + "img/"; 
 
  
 // 保存するデータの基準となるパスを指定する
 // 既存のフォルダを指定したほうが良い(環境に依る?)
 //
-var savedata_root_path = fb.ProfilePath + "/history/"; 
+var savedata_root_path = rootDirectory + "history/"; 
 
-// ここまで
-// ==============================================
-//
-var display1 = "$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // Album: %album%[ by %album artist%]"; // "Display Row1 - Year, Genre, Album etc..."
+// Default Value
+var display1 = "[%date] [%genre%] // Album: %album%[ by %album artist%]"; // "Display Row1 - Year, Genre, Album etc..."
 var display2 = "$if2(%animetitle%,-)"; // "Display Row2 - AnimeTieup etc..."
 var display3 = "%title%"; // "Display Row3 - Song Title etc..."
 var display4 = "[%artist%][ '//' %ARTIST_MEMBER%]"; // "Display Row4 - Artist Name etc..." 
@@ -33,7 +28,7 @@ var judgeFormat = "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%wor
 
 var xhr = new ActiveXObject("Microsoft.XMLHTTP"); 
 // new ActiveXObject('Msxml2.XMLHTTP');
-var path = fb.ProfilePath + "/panel/setting.json"; // 読み込む外部ファイル
+var path = rootDirectory + "setting.json"; // 読み込む外部ファイル
 
 xhr.open("GET", path, true);
 xhr.onreadystatechange = function(){
@@ -101,7 +96,7 @@ var autoStopTime = window.GetProperty("2.3. Auto Stop - 0: unavailable", 0);
 
 var saveFilename = window.GetProperty("3.3. Play history save to:", "");
 
-var superRantoroMode = window.GetProperty("1.0. Super Rantoro Mode", false);
+var superRantoroMode = window.GetProperty("1.0. Super Rantoro Mode (Guru Guru Oblate mode)", false);
 
 var saveReady = false;
 
@@ -115,7 +110,7 @@ try{
     maxPercent = parseInt(pers[1]);
 }
 catch(e){
-    console.log(e);
+    consoleWrite(e);
     maxPercent = 90;
     minPercent = 10;
 }
@@ -234,12 +229,12 @@ function fn_gorec(no){
                 return;
             }
         }
-        console.log("Don't set Sabi");
-        console.log("Sabi:" + tarr);
+        consoleWrite("Don't set Sabi");
+        consoleWrite("Sabi:" + tarr);
     }
     catch{
-        console.log("Can't move to Sabi");
-        console.log("Sabi:" + tarr);
+        consoleWrite("Can't move to Sabi");
+        consoleWrite("Sabi:" + tarr);
     }
 }
 
@@ -255,7 +250,7 @@ function fn_rec(no){
     if(tarr == undefined) tarr = ["-1","-1","-1","-1","-1","-1","-1","-1","-1","-1"];
     var handle = fb.CreateHandleList();
     var tfo = fb.TitleFormat("%playback_time_seconds%");
-    console.log(tfo.Eval());
+    consoleWrite(tfo.Eval());
     if(tarr[no] == tfo.Eval()) tarr[no] = "-1";
     else tarr[no] = tfo.Eval();
     saveData = tarr[0];
@@ -410,7 +405,6 @@ function on_paint(gr){
             }
             common_width /= 2;
         }
-        // console.log("General: " + fb.TitleFormat("%general%"))
         var clr = (fb.TitleFormat("%general%").Eval()=="1") ? RGB(200, 0, 0) : RGB(0, 0, 0);
         gr.DrawString(fb.TitleFormat(display1).Eval(), 
                                     fnt(undefined), clr, left_margin, 80, common_width, 100, 0);
@@ -470,7 +464,7 @@ function every_second_check(){
             // Next Position
             var startPos = (minPercent + Math.random() * (maxPercent - minPercent)) / 100;
             rantroStartPercent = parseInt(startPos * 100);
-            console.log("MoveAt:" + (fb.PlaybackLength * startPos));
+            consoleWrite("MoveAt:" + (fb.PlaybackLength * startPos));
             fb.PlaybackTime = fb.PlaybackLength * startPos;
             spRantroCD = fb.PlaybackTime;
             everyCheckPass = true;
@@ -495,21 +489,20 @@ function on_playback_seek(){
 
 function on_playback_new_track(){
     var playing_item_location = plman.GetPlayingItemLocation();
-    console.log(playing_item_location.PlaylistItemIndex + "/" + plman.PlaylistItemCount(plman.PlayingPlaylist));
     ntime = 0;
     skipTime = Infinity;
     PlayingLocation = -1;
     songDataDraw = !(practiceMode || everyoneAnswerMode);
     window.Repaint();
     var nowPlaying = get_tf();
-    console.log(get_tf());
+    consoleWrite("New Track:" + get_tf());
     rantroStartPercent = -1;
     if(mode != "N" || superRantoroMode){
         if(playing != nowPlaying){
             if(mode == "R" || superRantoroMode){
                 var startPos = (minPercent + Math.random() * (maxPercent - minPercent)) / 100;
                 rantroStartPercent = parseInt(startPos * 100);
-                console.log("StartAt:" + (fb.PlaybackLength * startPos));
+                consoleWrite("StartAt:" + (fb.PlaybackLength * startPos));
                 fb.PlaybackTime = fb.PlaybackLength * startPos;
                 if(superRantoroMode) {
                     spRantroCD = fb.PlaybackTime;
@@ -518,7 +511,7 @@ function on_playback_new_track(){
                 fb.PlaybackTime = fb.PlaybackLength - outoro_location;
             }
             playing = fb.GetNowPlaying();
-            console.log(get_tf());
+            consoleWrite(get_tf());
             playing = nowPlaying;
         }
     }
@@ -542,7 +535,7 @@ function on_playback_pause(state) {
 }
 
 function on_key_down(vkey) {
-    console.log("vkey: " + vkey);
+    consoleWrite("vkey: " + vkey);
 
     if(vkey == 68 && !expertKeyOperation || vkey == 32) {
         // Push D (UnexpertKeyOperation Mode) or Push Space
@@ -565,7 +558,7 @@ function on_key_down(vkey) {
         fn_next();
         fb.Pause();
         saveReady = true;
-        console.log("saveReady turns to true");
+        consoleWrite("saveReady turns to true");
     }
     else if(vkey == 67){
         // Push C
@@ -576,7 +569,7 @@ function on_key_down(vkey) {
         // Push Down or Push S (ExpertKeyOperation Mode)
         // Play & Pause
         if(fb.IsPlaying){
-            console.log(plman.PlayingPlaylist);
+            consoleWrite(plman.PlayingPlaylist);
             if(fb.IsPaused){             
                 if(saveReady && saveFilename != ""){
                     appendLineFile(savedata_root_path + saveFilename, "[" + getNowTime() + "] " + get_tf());
@@ -606,14 +599,14 @@ function on_key_down(vkey) {
         // ,
         // Volume Down
         fb.Volume = Math.max(fb.Volume-10, -100);
-        console.log("Volume Down => " + fb.Volume);
+        consoleWrite("Volume Down => " + fb.Volume);
         displayTextSet("Volume Down => " + fb.Volume, 5);
     }
     else if(vkey == 190) {
         // .
         // Volume x 2
         fb.Volume = Math.min(fb.Volume+10, 0);
-        console.log("Volume Up => " + fb.Volume);
+        consoleWrite("Volume Up => " + fb.Volume);
         displayTextSet("Volume Up => " + fb.Volume, 5);
     }
     else if(48 <= vkey && vkey <= 57){
@@ -654,11 +647,11 @@ function on_key_down(vkey) {
                     throw new Error("move_to's length is illigal");
                 }
                 else if(move_to.length == 1){
-                    console.log("move " + move_to[0] + "sec");
+                    consoleWrite("move " + move_to[0] + "sec");
                     fb.PlaybackTime = parseInt(move_to[0]);
                 }
                 else{
-                    console.log("move " + move_to[0] + "min" + move_to[1] + "sec");
+                    consoleWrite("move " + move_to[0] + "min" + move_to[1] + "sec");
                     fb.PlaybackTime = parseInt(move_to[0]) * 60 + parseInt(move_to[1]);
                 }
             }
@@ -689,6 +682,12 @@ function displayTextSet(text, time){
 //
 // 独自関数
 //
+//
+
+function consoleWrite(msg){
+    // Panel全体のconsole出力の委任を受ける
+    console.log("[DoraIntroPanel] " + msg);
+}
 
 function getNowTime(){
     var date = new Date();
@@ -764,11 +763,11 @@ function appendLineFile(filename, content){
         old += "\n"
     }
     catch{
-        console.log("Make new file: " + filename);
+        consoleWrite("Make new file: " + filename);
     }
     finally{
         utils.WriteTextFile(filename, old + content);
-        console.log("Write:" + content );
+        consoleWrite("Write:" + content );
     }
 }
 
@@ -787,9 +786,9 @@ function makePlaylist() {
     var modeCheck = lines[0].split(",");
     if(modeCheck[0] == "balance"){
         // 未実装
-        console.log("balance mode is unavailable");
+        consoleWrite("balance mode is unavailable");
         return;
-        console.log("Start making playlist by balance: " + plname);
+        consoleWrite("Start making playlist by balance: " + plname);
         var query_lists = [];
         var gravitys = [];
         var totalWeight = 0;
@@ -801,7 +800,7 @@ function makePlaylist() {
                 var datas = line.split(',');
                 if(pickSongs == 0){
                     pickSongs = parseInt(datas[1]);
-                    console.log("Pick Song: " + pickSongs + "songs");
+                    consoleWrite("Pick Song: " + pickSongs + "songs");
                     return;
                 }
                 if(datas[0] == "") {
@@ -810,7 +809,7 @@ function makePlaylist() {
                     var n = parseInt(datas[0]);
                     query = datas[1];
                     if(base == "" && datas[1] == ""){
-                        console.log("Skip");
+                        consoleWrite("Skip");
                         return;
                     }
                     if(base == "") query = datas[1];
@@ -822,21 +821,21 @@ function makePlaylist() {
                     query_lists.push(query);
                 }
             }catch(e){
-                console.log("Error:" + line);
-                console.log(e);
+                consoleWrite("Error:" + line);
+                consoleWrite(e);
             }
         });
-        console.log("Total Weight: " + totalWeight);
+        consoleWrite("Total Weight: " + totalWeight);
         for(var i = 0; i < query_lists.length; i++){
             var percent = gravitys[i] / totalWeight;
             var songs = parseInt(pickSongs * percent) + 1;
-            console.log("Weight: " + gravitys[i] + " -> " + songs + " songs (" +  percent * 100 + "%)")
+            consoleWrite("Weight: " + gravitys[i] + " -> " + songs + " songs (" +  percent * 100 + "%)")
             var hl = getHandleList(songs, query_lists[i], true);
             plman.InsertPlaylistItems(plid, 0, hl)
         }
     }
     else{
-        console.log("Start making playlist: " + plname);
+        consoleWrite("Start making playlist: " + plname);
 
         var base = "";
         lines.forEach(function(line){
@@ -845,12 +844,12 @@ function makePlaylist() {
                 var datas = line.split(',');
                 if(datas[0] == "") {
                     base = datas[1];
-                    console.log("MPS > Set Base: " + base);
+                    consoleWrite("MPS > Set Base: " + base);
                 }else{
                     var n = parseInt(datas[0]);
                     query = datas[1];
                     if(base == "" && datas[1] == ""){
-                        console.log("Skip");
+                        consoleWrite("Skip");
                         return;
                     }
                     
@@ -875,13 +874,13 @@ function makePlaylist() {
                     //     hl.RemoveRange(n, hl.Count); 
                     // }
                     plman.InsertPlaylistItems(plid, 0, picklist);
-                    console.log(datas[1] + "->" + n + "Songs");
+                    consoleWrite(datas[1] + "->" + n + "Songs");
                     // No error, but playlist made by that is always same.  
                     // It needs be append shuffle function.
                 }
             }catch(e){
-                console.log("Error:" + line);
-                console.log(e);
+                consoleWrite("Error:" + line);
+                consoleWrite(e);
             }
         });
     }
@@ -900,6 +899,6 @@ function getHandleList(n, query, write){
             n -= 1;
         }
     }
-    if(write) console.log(handle_list.Count + " songs <- " + query + " // All: " + cand_count + " songs" );
+    if(write) consoleWrite(handle_list.Count + " songs <- " + query + " // All: " + cand_count + " songs" );
     return handle_list;
 }
