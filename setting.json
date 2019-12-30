@@ -1,8 +1,6 @@
 {
     "display1": "$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // ALBUM: %album% [#%track number%] [by %album artist%] // $repeat('★',%fav_rate%)",
-    "display1-aiq": "$if(%work_year%,%work_year%$ifequal(%work_year%,%date%,,/%date%),*%date%) $if2(%type%,%genre%) // ALBUM: %publisher% [#%track number%] [by %album artist%] // $repeat('★',%fav_rate%)",
     "display2": "$if2(%animetitle%,-)",
-    "display2-aiq": "$if2(%album%,-)",
     "display3": "%title%[  *%title_rubi% ]",
     "display4": "[%artist%][ '//' %ARTIST_MEMBER%][  *%artist_rubi% ]",
     "format" : "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]"
