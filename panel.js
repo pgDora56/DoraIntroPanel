@@ -27,7 +27,6 @@ var display4 = "[%artist%][ '//' %ARTIST_MEMBER%]"; // "Display Row4 - Artist Na
 var judgeFormat = "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]";
 
 var xhr = new ActiveXObject("Microsoft.XMLHTTP"); 
-// new ActiveXObject('Msxml2.XMLHTTP');
 var path = rootDirectory + "setting.json"; // 読み込む外部ファイル
 
 xhr.open("GET", path, true);
@@ -66,12 +65,14 @@ var ntime = 0;
 var playing = "";
 var everyCheckPass = false;
 
+var isSpotify = false;
+var spotRecordTime = "";
+
 var PlayingLocation = -1; // 再生位置を毎度記録
 
 var correctFlag = false;
 var correctCount = 0;
 var wrongCount = 0;
-
 
 var mode = window.GetProperty("1. Mode - N(ormal) or R(antro) or O(utro)", "N");
 var rantoro_percent = window.GetProperty("1.1. Rantro - StartLocationRange", "10-90");
@@ -184,10 +185,11 @@ var rec = new button(300, 25, 50, 50, rec_img, fn_rec, "サビ記録");
 
 var plus_img = new button_img(img_path+"plus.png",img_path+"plus_hover.png");
 var plus = new button(350, 25, 50, 50, plus_img, 
-    makePlaylist,
+    //makePlaylist,
     //open_song_data,
     // copyTest,
-    "プレイリスト自動作成");
+    addManyLocation,
+    "まとめて追加");
 
 var musix_img = new button_img(img_path+"musix.png", img_path+"musix_hover.png");
 var musix = new button(250, 25, 50, 50, musix_img, fn_gorec, "サビへ");
@@ -220,6 +222,7 @@ function fn_next(){
 
 function fn_gorec(no){
     if(no==undefined) no = 1;
+    if(no==0) no = 10;
     no -= 1;
     tarr = rec_to_array();
     try{
@@ -258,18 +261,24 @@ function fn_rec(no){
         saveData += "," + tarr[i];
     }
 
-    var data = fb.GetNowPlaying();
-    handle.Add(data);
-    handle.UpdateFileInfoFromJSON(
-        JSON.stringify({
-            'RECORD_TIME' : saveData
-        })
-    );
-    window.Repaint();
+    if(isSpotify){
+        spotifySettingFileWrite(fb.GetNowPlaying().Path, fb.TitleFormat("%tracknumber%").Eval(), "RECORD_TIME", saveData);
+        spotRecordTime = saveData;
+    }
+    else{
+        var data = fb.GetNowPlaying();
+        handle.Add(data);
+        handle.UpdateFileInfoFromJSON(
+            JSON.stringify({
+                'RECORD_TIME' : saveData
+            })
+        );
+        window.Repaint();
+    }
 }
 
 function rec_to_array(){
-    var time = fb.TitleFormat("%RECORD_TIME%").Eval();
+    var time = (isSpotify) ? spotRecordTime : fb.TitleFormat("%RECORD_TIME%").Eval();
     if(time=="?"){
         return undefined;
     }
@@ -310,7 +319,7 @@ function on_paint(gr){
 
     window.MinHeight = 225;
     
-    gr.FillSolidRect(0, 0, window.Width, 25, RGB(135, 206, 255)); // Skyblue back
+    gr.FillSolidRect(0, 0, window.Width, 25, (isSpotify ? RGB(152,251,152) : RGB(135, 206, 255))); // Skyblue back (Palegreen back when spotify)
     gr.FillSolidRect(0, 25, window.Width, 50, RGB(153, 153, 153)); // Gray back
     var backColor = (have_focus) ? RGB(255,255,255) : RGB(225,225,225);
     gr.FillSolidRect(0, 75, window.Width, window.Height - 75, backColor);
@@ -414,7 +423,7 @@ function on_paint(gr){
                                     fnt(30, 1), clr, left_margin, 140 + v_margin * 2, common_width, 100, 0);
         gr.DrawString(fb.TitleFormat(display4).Eval(), 
                                     fnt(20), clr, left_margin, 180 + v_margin * 3, common_width, 100, 0);
-        var rectime = fb.TitleFormat("[%RECORD_TIME%]").Eval();
+        var rectime = (isSpotify) ? spotRecordTime : fb.TitleFormat("[%RECORD_TIME%]").Eval();
         if(rectime != ""){
             var tarr = rectime.split(",");
             var recText = "REC:" + ((tarr[0]=="-1") ? "-" : tarr[0]);
@@ -495,7 +504,13 @@ function on_playback_new_track(){
     songDataDraw = !(practiceMode || everyoneAnswerMode);
     window.Repaint();
     var nowPlaying = get_tf();
-    consoleWrite("New Track:" + get_tf());
+    var nowPlayPath = fb.GetNowPlaying().Path;
+    isSpotify = nowPlayPath.startsWith("spotify");
+    if(isSpotify){
+        spotRecordTime = spotifySettingFileLoad(nowPlayPath, fb.TitleFormat("%tracknumber%").Eval(), "RECORD_TIME");
+    }
+    consoleWrite("New Track:" + get_tf() + " // Track Path:" + nowPlayPath);
+    consoleWrite("IsSpotify:" + nowPlayPath.startsWith("spotify"));
     rantroStartPercent = -1;
     if(mode != "N" || superRantoroMode){
         if(playing != nowPlaying){
@@ -720,7 +735,7 @@ function getClipboard() { // クリップボードを取得する関数
     if (tb.CanPaste) tb.Paste();
     ff = null;
     return tb.Text;
-  }
+}
 
 function setClipboard(text) { // クリップボードにコピーする関数
   var ff = new ActiveXObject("Forms.Form.1");
@@ -756,6 +771,54 @@ function open_song_data_with_repaint(){
     window.Repaint();
 }
 
+function spotifySettingFileWrite(loc, track, idx, content) {
+    var filename = rootDirectory + "spotify\\" + loc.slice(8).replace(":", "-") + "-" + track + ".txt";
+    var rewriteLine = idx + "|" + content;
+    try{
+        old = utils.ReadTextFile(filename);
+        params = old.split('\n');
+        rewrite = false;
+        for(i=0; i<params.length; i++){
+            if(params[i].startsWith(idx + "|")){
+                consoleWrite(filename + ": " + params[i] + "->" + content);
+                params[i] = rewriteLine;
+                rewrite = true;
+                break;
+            }
+        }
+        if(!rewrite){
+            params.push(rewriteLine);
+        }
+    }
+    catch{
+        consoleWrite("New spotSetting: " + filename);
+        params = [rewriteLine];
+    }
+    finally{
+        utils.WriteTextFile(filename, params.join("\n"));
+        consoleWrite("spotSetting write:" + filename );
+    }
+}
+
+function spotifySettingFileLoad(loc, track, idx){
+    try{
+        var filename = rootDirectory + "spotify\\" + loc.slice(8).replace(":", "-") + "-" + track + ".txt";
+        old = utils.ReadTextFile(filename);
+        params = old.split('\n');
+        rewrite = false;
+        for(i=0; i<params.length; i++){
+            if(params[i].startsWith(idx + "|")){
+                param = params[i].replace("\n", "").replace("\r","").split("|");
+                return param[1];
+            }
+        }
+    }
+    catch{
+        consoleWrite("Spotify Setting File isn't found");
+    }
+    return "";
+}
+
 function appendLineFile(filename, content){
     var old = "";
     try{
@@ -770,6 +833,16 @@ function appendLineFile(filename, content){
         consoleWrite("Write:" + content );
     }
 }
+
+function addManyLocation() {
+    var enter = getClipboard();
+    var lines = enter.split('\n');
+    var datas = lines.map(x => x.replace("\n", "").replace("\r",""));
+    consoleWrite(lines);
+    consoleWrite(datas);
+    plman.AddLocations(plman.ActivePlaylist, datas);
+}
+
 
 function makePlaylist() {
     var enter = getClipboard();
