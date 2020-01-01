@@ -513,7 +513,7 @@ function on_playback_new_track(){
     consoleWrite("IsSpotify:" + nowPlayPath.startsWith("spotify"));
     rantroStartPercent = -1;
     if(mode != "N" || superRantoroMode){
-        if(playing != nowPlaying){
+        if(playing != nowPlayPath){
             if(mode == "R" || superRantoroMode){
                 var startPos = (minPercent + Math.random() * (maxPercent - minPercent)) / 100;
                 rantroStartPercent = parseInt(startPos * 100);
@@ -525,9 +525,8 @@ function on_playback_new_track(){
             }else if(mode == "O"){
                 fb.PlaybackTime = fb.PlaybackLength - outoro_location;
             }
-            playing = fb.GetNowPlaying();
             consoleWrite(get_tf());
-            playing = nowPlaying;
+            playing = nowPlayPath;
         }
     }
     if(autoCopy){
