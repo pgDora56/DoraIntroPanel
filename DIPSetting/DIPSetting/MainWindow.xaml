@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DIPSetting"
         mc:Ignorable="d"
-        Title="DIPSetting" Height="400" Width="800" Background="#FF3F3F46" Foreground="White">
+        Title="DIPSettingTool" Height="400" Width="800" Background="#FF3F3F46" Foreground="White" Loaded="Window_Loaded" ResizeMode="NoResize">
     <Grid Margin="5">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto" />
@@ -22,39 +22,32 @@
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
             <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
-            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         
         <!-- Display1 -->
         <Label Grid.Row="0" Grid.Column="0" Content="Display1" FontSize="18" Foreground="White" />
-        <TextBox x:Name="disp1" Grid.Row="0" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" />
+        <TextBox x:Name="disp1" Grid.Row="0" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" TextChanged="TextChanged" />
         <Label Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="1行目です。細字で文字も最小になります。リリース年・ジャンル・アルバム名等を入れると良いと思います。" Foreground="White" Margin="20,0,0,10" />
 
         <!-- Display2 -->
         <Label Grid.Row="2" Grid.Column="0" Content="Display2" FontSize="18" Foreground="White" HorizontalAlignment="Right" />
-        <TextBox x:Name="disp2" Grid.Row="2" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" />
+        <TextBox x:Name="disp2" Grid.Row="2" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" TextChanged="TextChanged" />
         <Label Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Content="2行目です。太字で文字大きめ。曲名など。タイアップ作品名なんかを入れてもいいかもしれません。" Foreground="White" Margin="20,0,0,10" />
 
         <!-- Display3 -->
         <Label Grid.Row="4" Grid.Column="0" Content="Display3" FontSize="18" Foreground="White" HorizontalAlignment="Right" />
-        <TextBox x:Name="disp3" Grid.Row="4" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" />
+        <TextBox x:Name="disp3" Grid.Row="4" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" TextChanged="TextChanged" />
         <Label Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="3行目です。2行目と同じく、太字で文字大きめ。歌手名など。" Foreground="White" Margin="20,0,0,10" />
 
         <!-- Display4 -->
         <Label Grid.Row="6" Grid.Column="0" Content="Display4" FontSize="18" Foreground="White" HorizontalAlignment="Right" />
-        <TextBox x:Name="disp4" Grid.Row="6" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" />
+        <TextBox x:Name="disp4" Grid.Row="6" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" TextChanged="TextChanged" />
         <Label Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Content="4行目です。1行目より気持ち文字大きめ。細字です。適宜必要なものを入れてください。コメントとかでもいいかもですね。" Foreground="White" Margin="20,0,0,10" />
 
         <!-- Format -->
         <Label Grid.Row="8" Grid.Column="0" Content="Format" FontSize="18" Foreground="White" HorizontalAlignment="Right" />
-        <TextBox x:Name="format" Grid.Row="8" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" />
+        <TextBox x:Name="format" Grid.Row="8" Grid.Column="1" Margin="4" VerticalContentAlignment="Center" TextChanged="TextChanged" />
         <Label Grid.Row="9" Grid.Column="0" Grid.ColumnSpan="2" Content="AutoCopyで使うコピーフォーマットになります。foobar固有の設定とは異なるので、プレイリストからコピペする場合はそちらも別途設定する必要があります。" Foreground="White" Margin="20,0,0,10" />
-        
-        
-        
-        
         
     </Grid>
 </Window>
