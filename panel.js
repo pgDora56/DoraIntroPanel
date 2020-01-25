@@ -3,7 +3,7 @@
 // 初期値
 //
 
-window.DefinePanel("DoraIntroPanel", { author: "Dora F." });
+window.DefinePanel("DoraIntroPanel", { author: "Dora F.", version: "20.01b" });
 
 var rootDirectory = fb.ProfilePath + "DoraIntroPanel/" // Panel全体のRootFolder
 
@@ -52,7 +52,6 @@ var have_focus = false; // フォーカスの状況を真偽値で持つ
 var accept_command = false; // コマンドを受け付けるときにtrue
 var command = ""; // コマンドを一時的に入れておく
 var displayText = ""; // メッセージテキスト
-var displayRemainTime = 0; // テキストを表示しておくコマ数(Repaintごとに1減)
 var setTimer;
 
 var autoCopy = true;
@@ -75,6 +74,7 @@ var correctCount = 0;
 var wrongCount = 0;
 
 var mode = window.GetProperty("1. Mode - N(ormal) or R(antro) or O(utro)", "N");
+var superRantoroMode = window.GetProperty("1.0. Super Rantoro Mode (Guru Guru Oblate mode)", false);
 var rantoro_percent = window.GetProperty("1.1. Rantro - StartLocationRange", "10-90");
 var outoro_location = 15;
 var get_outoro_location = window.GetProperty("1.2. Outro - StartLocation", "15");
@@ -96,8 +96,10 @@ var nextSongSearch = window.GetProperty("3.4. View Next Song Search Panel", fals
 var autoStopTime = window.GetProperty("2.3. Auto Stop - 0: unavailable", 0);
 
 var saveFilename = window.GetProperty("3.3. Play history save to:", "");
+var checkingToolEnabled = window.GetProperty("3.5. Check & Uncheck Counting Tool - Enabled:", false);
 
-var superRantoroMode = window.GetProperty("1.0. Super Rantoro Mode (Guru Guru Oblate mode)", false);
+var volumeFadeChangingDelta = window.GetProperty("4.1. Volume change per push(< key & > key) - 0 ~ 100", 10);
+if(volumeFadeChangingDelta > 100 || volumeFadeChangingDelta < 0) volumeFadeChangingDelta = 10;
 
 var saveReady = false;
 
@@ -371,7 +373,8 @@ function on_paint(gr){
     if(everyoneAnswerMode) { mode_str += " - 全員解答モード" }
     else if(practiceMode) { mode_str += " - 練習モード" }
     var playing_item_location = plman.GetPlayingItemLocation();
-    var cwcount = ((correctFlag) ? "Checked" : "Unchecked") + "/" + correctCount + "-" + wrongCount + " | ";
+    var cwcount = ""
+    if(checkingToolEnabled) cwcount = ((correctFlag) ? "Checked" : "Unchecked") + "/" + correctCount + "-" + wrongCount + " | ";
     var topText = cwcount + plman.GetPlaylistName(playing_item_location.PlaylistIndex); // Playlist Name
     var left_margin = 20;
     var v_extra = window.Height - window.MinHeight;
@@ -445,11 +448,7 @@ function on_paint(gr){
             fnt(50, 1), RGB(0, 0, 0), left_margin, 105 + v_margin, window.Width - left_margin, 100);
     }
 
-    if(displayRemainTime > 0){
-        topText += " " + displayText;
-        displayRemainTime--;
-        if(displayRemainTime <= 0) displayText = ""; 
-    }
+    topText += " " + displayText;
     if(accept_command){
         // If it can accept command, topText show on command-text.
         topText += " >" + command;
@@ -549,7 +548,7 @@ function on_playback_pause(state) {
 }
 
 function on_key_down(vkey) {
-    consoleWrite("vkey: " + vkey);
+    // consoleWrite("vkey: " + vkey); // For debug
 
     if(vkey == 68 && !expertKeyOperation || vkey == 32) {
         // Push D (UnexpertKeyOperation Mode) or Push Space
@@ -610,18 +609,12 @@ function on_key_down(vkey) {
         }
     }
     else if(vkey == 188) {
-        // ,
         // Volume Down
-        fb.Volume = Math.max(fb.Volume-10, -100);
-        consoleWrite("Volume Down => " + fb.Volume);
-        displayTextSet("Volume Down => " + fb.Volume, 5);
+        volumeFade(-1 * volumeFadeChangingDelta,20,50);
     }
     else if(vkey == 190) {
-        // .
-        // Volume x 2
-        fb.Volume = Math.min(fb.Volume+10, 0);
-        consoleWrite("Volume Up => " + fb.Volume);
-        displayTextSet("Volume Up => " + fb.Volume, 5);
+        // Volume Up
+        volumeFade(volumeFadeChangingDelta,20,50);
     }
     else if(48 <= vkey && vkey <= 57){
         // Push Number key
@@ -690,7 +683,39 @@ function commandAcceptChange(mode){
 
 function displayTextSet(text, time){
     displayText = text;
-    displayRemainTime = time;
+    window.Repaint();
+    if(time > 0){
+        setTimeout(function(){
+            if(text==displayText) displayTextSet("", -1);
+        }, time * 1000);
+    }
+}
+
+volumeFadeBusy = false;
+function volumeFade(volumeFadeDelta, volumeFadeCount, spendTime, isRecuresive){
+    if(isRecuresive == undefined) isRecuresive = false;
+    if(spendTime == undefined) spendTime = 100;
+    if(volumeFadeBusy && !isRecuresive){
+        volumeFadeBusy = false;
+        displayTextSet("Volume-fade Stop => " + fb.Volume, 5); 
+        return false;
+    }
+    volumeFadeBusy = true;
+    deltaPerClock = volumeFadeDelta / volumeFadeCount;
+    fb.Volume = Math.max(Math.min(fb.Volume+deltaPerClock, 0), -100);
+    volumeFadeDelta -= deltaPerClock;
+    volumeFadeCount -= 1;
+    displayTextSet("Volume-fade => " + fb.Volume + "  Remain:" + volumeFadeDelta + "/" + volumeFadeCount, 5); 
+    if(volumeFadeCount > 0){
+        setTimeout(function() {
+             if(volumeFadeBusy) volumeFade(volumeFadeDelta, volumeFadeCount, spendTime, true);
+        }, spendTime);
+    }
+    else{
+        volumeFadeBusy = false;
+        displayTextSet("Volume Change Complete", 5);
+    }
+    return true;
 }
 
 //
