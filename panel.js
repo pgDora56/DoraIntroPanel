@@ -3,9 +3,10 @@
 // 初期値
 //
 
-window.DefinePanel("DoraIntroPanel", { author: "Dora F.", version: "20.01b" });
+window.DefinePanel("DoraIntroPanel", { author: "Dora F.", version: "20.03" });
 
-var rootDirectory = fb.ProfilePath + "DoraIntroPanel/" // Panel全体のRootFolder
+// var rootDirectory = fb.ProfilePath + "/user-components/foo_spider_monkey_panel/DoraIntroPanel/" // Panel全体のRootFolder
+var rootDirectory = fb.ProfilePath + "/user-components/foo_spider_monkey_panel/DoraIntroPanelDev/" // 開発用のRootFolder
 
 consoleWrite("Root Directory: " + rootDirectory);
 // imgフォルダまでのパスを指定する
@@ -20,11 +21,11 @@ var savedata_root_path = rootDirectory + "history/";
 
 // Default Value
 var display1 = "[%date] [%genre%] // Album: %album%[ by %album artist%]"; // "Display Row1 - Year, Genre, Album etc..."
-var display2 = "$if2(%animetitle%,-)"; // "Display Row2 - AnimeTieup etc..."
+var display2 = "$if2(%program%,-)"; // "Display Row2 - Tieup etc..."
 var display3 = "%title%"; // "Display Row3 - Song Title etc..."
 var display4 = "[%artist%][ '//' %ARTIST_MEMBER%]"; // "Display Row4 - Artist Name etc..." 
 
-var judgeFormat = "[%animetitle% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]";
+var judgeFormat = "[%program% - ]%title%[ / %artist%][ - %type%][ - $if2(%work_year%,%date%)]";
 
 var xhr = new ActiveXObject("Microsoft.XMLHTTP"); 
 var path = rootDirectory + "setting.json"; // 読み込む外部ファイル
