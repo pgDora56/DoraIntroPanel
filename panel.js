@@ -754,23 +754,11 @@ function get_tf(tf, handle){
 }
 
 function getClipboard() { // クリップボードを取得する関数
-    var ff = new ActiveXObject("Forms.Form.1");
-    var tb = ff.Controls.Add("Forms.TextBox.1").Object;
-    tb.MultiLine = true;
-    if (tb.CanPaste) tb.Paste();
-    ff = null;
-    return tb.Text;
+    return new ActiveXObject("htmlfile").parentWindow.clipboardData.getData("text")
 }
 
 function setClipboard(text) { // クリップボードにコピーする関数
-  var ff = new ActiveXObject("Forms.Form.1");
-  var tb = ff.Controls.Add("Forms.TextBox.1").Object;
-  tb.MultiLine = true;
-  tb.Text = text;
-  tb.SelStart = 0;
-  tb.SelLength = tb.TextLength;
-  tb.Copy();
-  tb = null; ff = null;
+    return new ActiveXObject("htmlfile").parentWindow.clipboardData.setData("text", text)
 }
 
 
