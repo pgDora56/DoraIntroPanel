@@ -3,7 +3,7 @@
 // 初期値
 //
 
-window.DefinePanel("DoraIntroPanel", { author: "Dora F.", version: "20.03" });
+window.DefinePanel("DoraIntroPanel", { author: "Dora F.", version: "20.03b2" });
 
 // var rootDirectory = fb.ProfilePath + "/user-components/foo_spider_monkey_panel/DoraIntroPanel/" // Panel全体のRootFolder
 var rootDirectory = fb.ProfilePath + "/user-components/foo_spider_monkey_panel/DoraIntroPanelDev/" // 開発用のRootFolder
@@ -49,7 +49,7 @@ xhr.send(null);
 include(`${fb.ComponentPath}docs\\Flags.js`);
 include(`${fb.ComponentPath}docs\\Helpers.js`);
 
-var have_focus = false; // フォーカスの状況を真偽値で持つ
+var have_focus = true; // フォーカスの状況を真偽値で持つ
 var accept_command = false; // コマンドを受け付けるときにtrue
 var command = ""; // コマンドを一時的に入れておく
 var displayText = ""; // メッセージテキスト
@@ -70,19 +70,24 @@ var spotRecordTime = "";
 
 var PlayingLocation = -1; // 再生位置を毎度記録
 
-var correctFlag = false;
-var correctCount = 0;
-var wrongCount = 0;
 
-var mode = window.GetProperty("1. Mode - N(ormal) or R(antro) or O(utro)", "N");
+var mode = window.GetProperty("1. Mode - N(ormal) or R(antro) or O(utro) or M(ix N&R)", "N");
 var superRantoroMode = window.GetProperty("1.0. Super Rantoro Mode (Guru Guru Oblate mode)", false);
 var rantoro_percent = window.GetProperty("1.1. Rantro - StartLocationRange", "10-90");
-var outoro_location = 15;
 var get_outoro_location = window.GetProperty("1.2. Outro - StartLocation", "15");
+var get_mix_percent = window.GetProperty("1.3. Mix - Rantro Percent(1/n)", "2");
+var outoro_location = 15;
+var mix_percent = 2;
 try{
     outoro_location = parseInt(get_outoro_location);
 }catch(e){
     outoro_location = 15;
+}
+try{
+    mix_percent = parseFloat(get_mix_percent);
+    if(mix_percent <= 1) mix_percent = 2;
+}catch(e){
+    mix_percent = 2;
 }
 var autoCopy = window.GetProperty("3.1. Music Properties Autocopy", false);
 var practiceMode = window.GetProperty("2.1. Practice Mode - Enabled", false);
@@ -97,7 +102,6 @@ var nextSongSearch = window.GetProperty("3.4. View Next Song Search Panel", fals
 var autoStopTime = window.GetProperty("2.3. Auto Stop - 0: unavailable", 0);
 
 var saveFilename = window.GetProperty("3.3. Play history save to:", "");
-var checkingToolEnabled = window.GetProperty("3.5. Check & Uncheck Counting Tool - Enabled:", false);
 
 var volumeFadeChangingDelta = window.GetProperty("4.1. Volume change per push(< key & > key) - 0 ~ 100", 10);
 if(volumeFadeChangingDelta > 100 || volumeFadeChangingDelta < 0) volumeFadeChangingDelta = 10;
@@ -130,18 +134,27 @@ class button {
         this.bimg = bimg;
         this.handler = handler;
         this.name = name;
+        this.isHover = false;
 
         this.img = gdi.Image(bimg.normal);
     }
 
     cs(str){
         if(str=="hover"){
-            this.img = gdi.Image(this.bimg.hover);
+            if(!this.isHover){
+                this.isHover = true;
+                this.img = gdi.Image(this.bimg.hover);
+                return true;
+            }
         }
         else{
-            this.img = gdi.Image(this.bimg.normal);
+            if(this.isHover){
+                this.isHover = false;
+                this.img = gdi.Image(this.bimg.normal);
+                return true;
+            }
         }
-        window.Repaint();
+        return false;
     }
 
     trace(x,y){
@@ -292,14 +305,19 @@ function rec_to_array(){
     return arr;
 }
 
+const button_num = 8;
 function on_mouse_move(x,y){
+    var needPaint = false;
     buttons.forEach(function(b){
         if (b.trace(x,y)) {
-            b.cs("hover");
+            needPaint = needPaint || b.cs("hover");
         } else {
-            b.cs("normal");
+            needPaint = needPaint || b.cs("normal");
         }
     });
+    if(needPaint){
+        window.RepaintRect(0, 25, 50 * button_num ,50);
+    }
 }
 
 function on_mouse_lbtn_up(x,y){
@@ -317,11 +335,19 @@ function on_mouse_lbtn_up(x,y){
 // システム系
 //
 
-function on_paint(gr){
-    every_second_check();
+window.MinHeight = 225;
+var left_margin = 20;
+var v_extra = 0;
+var v_margin = 0;
+function on_size(w, h){
+    // サイズ変更時に呼ばれる
+    v_extra = window.Height - window.MinHeight;
+    v_margin = v_extra / 4;
+}
 
-    window.MinHeight = 225;
-    
+function on_paint(gr){
+    var playing_item_location = plman.GetPlayingItemLocation();
+    var topText = plman.GetPlaylistName(playing_item_location.PlaylistIndex); // Playlist Name
     gr.FillSolidRect(0, 0, window.Width, 25, (isSpotify ? RGB(152,251,152) : RGB(135, 206, 255))); // Skyblue back (Palegreen back when spotify)
     gr.FillSolidRect(0, 25, window.Width, 50, RGB(153, 153, 153)); // Gray back
     var backColor = (have_focus) ? RGB(255,255,255) : RGB(225,225,225);
@@ -362,9 +388,17 @@ function on_paint(gr){
     });
 
     var mode_str = "通常モード";
-    if(superRantoroMode || mode == "R") {
+    if(superRantoroMode || mode == "R" || mode == "M") {
         mode_str = ((superRantoroMode) ? "SP" : "") + "ラントロモード";
-        mode_str += "(" + minPercent + "% ～ " + maxPercent + "%)";
+        if(mode=="M") {
+            var chosen_rantro_per = Math.ceil(1 / mix_percent * 100);
+            mode_str = "Mixモード[Intro:" + (100 - chosen_rantro_per) + "%, Rantro";
+            mode_str += "(" + minPercent + "% ～ " + maxPercent + "%)";
+            mode_str += ":" + chosen_rantro_per + "%]";
+        }
+        else{
+            mode_str += "(" + minPercent + "% ～ " + maxPercent + "%)";
+        }
         if(rantroStartPercent != -1) mode_str += " StartAt:" + rantroStartPercent + "%";
     }
     else if(mode == "O") {
@@ -373,13 +407,10 @@ function on_paint(gr){
     }
     if(everyoneAnswerMode) { mode_str += " - 全員解答モード" }
     else if(practiceMode) { mode_str += " - 練習モード" }
-    var playing_item_location = plman.GetPlayingItemLocation();
-    var cwcount = ""
-    if(checkingToolEnabled) cwcount = ((correctFlag) ? "Checked" : "Unchecked") + "/" + correctCount + "-" + wrongCount + " | ";
-    var topText = cwcount + plman.GetPlaylistName(playing_item_location.PlaylistIndex); // Playlist Name
-    var left_margin = 20;
-    var v_extra = window.Height - window.MinHeight;
-    var v_margin = v_extra / 4;
+    // var topText = plman.GetPlaylistName(playing_item_location.PlaylistIndex); // Playlist Name
+    // var left_margin = 20;
+    // var v_extra = window.Height - window.MinHeight;
+    // var v_margin = v_extra / 4;
     gr.GdiDrawText(mode_str, fnt(20, 6), RGB(255, 255, 255), 405, 25, 800, 30); // モード
     if(songDataDraw){
         common_width = window.Width - left_margin;
@@ -457,9 +488,10 @@ function on_paint(gr){
     gr.GdiDrawText(topText, fnt(), RGB(0, 0, 0), 0, 0, window.Width, 25);
 }
 
+
 function on_playback_time(t){
     PlayingLocation = t;
-    window.Repaint();
+    every_second_check();
 }
 
 function every_second_check(){
@@ -487,13 +519,32 @@ function every_second_check(){
             fb.Next();
         }
     }
+    if(songDataDraw){
+        // 時間の部分だけ上書き
+        repaintGrayZone();
+    }
+    else if(everyoneAnswerMode){
+        // たぶんひつようなとこだけ上書き
+        window.RepaintRect(left_margin, 105 + v_margin, window.Width - left_margin, 100);
+    }
+
     if(t == autoStopTime){
         fb.Pause();
     }
 }
 
 function on_playback_seek(){
-    window.Repaint();
+    every_second_check();
+}
+
+function repaintGrayZone(){
+    // グレーのとこを上書きする
+    window.RepaintRect(50 * button_num, 25, window.Width - 50 * button_num, 50);
+}
+
+function repaintTopBar(){
+    // 最上段のバーを上書きする
+    window.RepaintRect(0, 0, window.Width, 25);
 }
 
 function on_playback_new_track(){
@@ -514,8 +565,16 @@ function on_playback_new_track(){
     rantroStartPercent = -1;
     if(mode != "N" || superRantoroMode){
         if(playing != nowPlayPath){
-            if(mode == "R" || superRantoroMode){
-                var startPos = (minPercent + Math.random() * (maxPercent - minPercent)) / 100;
+            if(mode == "R" || mode == "M" || superRantoroMode){
+                var startPos = 0;
+                var r = Math.random();
+                if(mode == "M"){
+                    r *= mix_percent;
+                    if(r < 1) startPos = (minPercent + r * (maxPercent - minPercent)) / 100;
+                }
+                else{
+                    startPos = (minPercent + r * (maxPercent - minPercent)) / 100;
+                }
                 rantroStartPercent = parseInt(startPos * 100);
                 consoleWrite("StartAt:" + (fb.PlaybackLength * startPos));
                 fb.PlaybackTime = fb.PlaybackLength * startPos;
@@ -532,13 +591,6 @@ function on_playback_new_track(){
     if(autoCopy){
         setClipboard(nowPlaying);
     }
-    if(correctFlag){
-        correctCount += 1;
-    }else{
-        wrongCount += 1;
-    }
-
-    correctFlag = false;
 }
 
 function on_playback_pause(state) {
@@ -573,11 +625,6 @@ function on_key_down(vkey) {
         fb.Pause();
         saveReady = true;
         consoleWrite("saveReady turns to true");
-    }
-    else if(vkey == 67){
-        // Push C
-        correctFlag = !correctFlag;
-        window.Repaint();
     }
     else if(vkey == 83 && expertKeyOperation || vkey == 40) {
         // Push Down or Push S (ExpertKeyOperation Mode)
@@ -629,7 +676,9 @@ function on_key_down(vkey) {
             }
             plman.SetPlaylistSelectionSingle(plman.ActivePlaylist, playing_item_location.PlaylistItemIndex, true);
             plman.MovePlaylistSelection(plman.ActivePlaylist, (number == 0) ? 10 : number);
-            window.Repaint();
+            repaintGrayZone();
+            common_width = window.Width - left_margin;
+            window.RepaintRect(0, 75, window.Width, window.Height - 75);
         }else{
             fn_gorec(number);
         }
@@ -642,7 +691,7 @@ function on_key_down(vkey) {
         if(vkey == 8){
             // Push BackSpace
             command = command.slice(0, -1);
-            window.Repaint();
+            repaintTopBar();
         }
         else if(vkey == 13) {
             // Push Enter
@@ -673,18 +722,18 @@ function on_key_down(vkey) {
 
 function commandAppend(st){
     command += st;
-    window.Repaint();
+    repaintTopBar();
 }
 
 function commandAcceptChange(mode){
     accept_command = mode;
     command = "";
-    window.Repaint();
+    repaintTopBar();
 }
 
 function displayTextSet(text, time){
     displayText = text;
-    window.Repaint();
+    repaintTopBar();
     if(time > 0){
         setTimeout(function(){
             if(text==displayText) displayTextSet("", -1);
