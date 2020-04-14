@@ -3,7 +3,7 @@
 // 初期値
 //
 
-window.DefinePanel("DoraIntroPanel", { author: "Dora F.", version: "20.03b2" });
+window.DefinePanel("DoraIntroPanel", { author: "Dora F.", version: "20.04" });
 
 // var rootDirectory = fb.ProfilePath + "/user-components/foo_spider_monkey_panel/DoraIntroPanel/" // Panel全体のRootFolder
 var rootDirectory = fb.ProfilePath + "/user-components/foo_spider_monkey_panel/DoraIntroPanelDev/" // 開発用のRootFolder
